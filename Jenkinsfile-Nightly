@@ -1,0 +1,150 @@
+pipeline {
+  parameters {
+    booleanParam(name: 'K8SGetKB',   defaultValue: true, description: 'Run Get KB')
+    booleanParam(name: 'CheckEaaS',  defaultValue: true, description: 'Run Check EaaS')
+    booleanParam(name: 'CheckBD',    defaultValue: true, description: 'Run Check BD')
+    booleanParam(name: 'CheckHprof', defaultValue: true, description: 'Run Check hprof')
+    booleanParam(name: 'GetOcpPVC',  defaultValue: true, description: 'Run Get OCP PVC')
+    booleanParam(name: 'GetScyHst',  defaultValue: true, description: 'Run Get Scylla hosts')
+    booleanParam(name: 'GetPsqlHst', defaultValue: true, description: 'Run PSQL Hosts')
+    choice(      name: 'Xflag',      choices: [' ','-x'], description: 'put "-x" flag for bash commands')
+  }
+  triggers {
+    cron('H 0 * * *')
+  }
+  agent {label 'Monitoring'}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '2'))
+  }
+  stages {
+    stage('Prep httpd') {
+      steps {
+        script {
+          sh '''
+             sudo bash $Xflag GEN/prep_httpd.sh
+          '''
+        }
+      }
+    }
+    stage('All') {
+    parallel {
+    stage('Get All Kafka Brokers') {
+      when { expression { params.K8SGetKB == true } }
+      steps {
+        script {
+          env.PHASE='GetKB'
+          sh '''
+            if [ "${HUDSON_URL}" == "http://xxx.yyy.zzz.aaa:8080/" ]
+            then
+              sudo bash $Xflag KAFKA/aks_get_all_kafka_brokers.sh
+            else
+              sudo bash $Xflag KAFKA/k8s_ocp_get_all_kafka_brokers.sh
+            fi
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/k8s_ocp_kafka.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Check EaaS') {
+      when { expression { params.CheckEaaS == true } }
+      steps {
+        script {
+          env.PHASE='CheckEaaS'
+          sh '''
+            if [ "${HUDSON_URL}" != "http://xxx.yyy.zzz.aaa:8080/" ]
+            then
+              sudo bash $Xflag EAAS/check_eaas.sh
+            else
+              sudo bash $Xflag Azure/az_login_52776656.sh
+              sudo bash $Xflag Azure/az_get_vm_Linux.sh
+            fi
+          '''
+        }
+      }
+    }
+    stage('Check BD') {
+      when { expression { params.CheckBD == true } }
+      steps {
+        script {
+          env.PHASE='CheckBD'
+          sh '''
+            sudo bash $Xflag GEN/check_all_BD.sh
+          '''
+        }
+      }
+    }
+    stage('Check hprof') {
+      when { expression { params.CheckHprof == true } }
+      steps {
+        script {
+          env.PHASE='CheckHprof'
+          sh '''
+            sudo bash $Xflag GEN/delete_all_hprof.sh
+          '''
+        }
+      }
+    }
+    stage('Get OCP_PVC') {
+      when { expression { params.GetOcpPVC == true } }
+      steps {
+        script {
+          env.PHASE='GetOcpPVC'
+          sh '''
+            if [ "${HUDSON_URL}" == "http://xxx.yyy.zzz.aaa:8080/" ]
+            then
+              echo ""
+            else
+              sudo bash $Xflag OCP/ocp_get_all_pvc.sh
+              echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+              echo check http://$(hostname -i)/ocp_all_pvc.html
+              echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            fi
+          '''
+        }
+      }
+    }
+    stage('Get Scylla Hosts') {
+      when { expression { params.GetScyHst == true } }
+      steps {
+        script {
+          env.PHASE='GetScyHst'
+          sh '''
+            sudo bash $Xflag SCYLLA/scylla_get_all_hosts.sh
+            sudo bash $Xflag SCYLLA/scylla_get_all_keyspaces.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/scylla_all_keyspaces.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Get PSQL Hosts') {
+      when { expression { params.GetPsqlHst == true } }
+      steps {
+        script {
+          env.PHASE='GetPsqlHst'
+          sh '''
+            sudo bash $Xflag PSQL/psql_get_all_hosts.sh
+            sudo bash $Xflag PSQL/psql_get_all_databases.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/psql_all_databases.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+  }
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}
+}
+}

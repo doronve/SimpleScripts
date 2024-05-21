@@ -1,0 +1,197 @@
+pipeline {
+  parameters {
+    booleanParam(name: 'GetK8SHost', defaultValue: true, description: 'Run Get K8S hosts')
+    booleanParam(name: 'checkOCP1',  defaultValue: true, description: 'Run Check OCP')
+    booleanParam(name: 'checkOCP2',  defaultValue: true, description: 'Run Check OCP')
+    booleanParam(name: 'checkDF',    defaultValue: true, description: 'Run Check DF')
+    booleanParam(name: 'CheckHosts', defaultValue: true, description: 'Run Get Various Host Types')
+    booleanParam(name: 'GetCDHHosts',defaultValue: true, description: 'Run CDH hosts')
+    booleanParam(name: 'checkUptime',defaultValue: true, description: 'Run check uptime')
+    booleanParam(name: 'checkTouch', defaultValue: true, description: 'Run touch')
+    booleanParam(name: 'checkAZ',    defaultValue: true, description: 'Run check AZ resources')
+    choice(      name: 'Xflag',      choices: [' ','-x'], description: 'put "-x" flag for bash commands')
+  }
+  triggers {
+    cron('10 * * * *')
+  }
+  agent {label 'Monitoring'}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '1'))
+  }
+  stages {
+    stage('All') {
+    parallel {
+    stage('Get All K8S Hosts') {
+      when { expression { params.GetK8SHost == true } }
+      steps {
+        script {
+          env.PHASE='GetK8SHost'
+          sh '''
+            set +x
+            sudo bash $Xflag K8S/k8s_get_all_hosts.sh
+            sudo bash $Xflag K8S/k8s_get_all_status_short.sh
+            sudo bash $Xflag K8S/k8s_get_all_status.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/myhome_k8s_short.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/myhome_k8s.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Check OCP1') {
+      when { expression { params.checkOCP1 == true && "${HUDSON_URL}" != "http://100.72.34.4:8080/"  } }
+      steps {
+        script {
+          env.PHASE='CheckOCP1'
+          sh '''
+            set +x
+            sudo bash $Xflag OCP/check_OCP.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/NSOCPstat.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Check OCP2') {
+      when { expression { params.checkOCP2 == true && "${HUDSON_URL}" != "http://100.72.34.4:8080/"  } }
+      steps {
+        script {
+          env.PHASE='CheckOCP2'
+          sh '''
+            set +x
+            sudo timeout 1800 bash $Xflag OCP/ocp_get_all_projects.sh
+
+#            for clus in OCPLIST
+#            do
+#              echo bash $Xflag OCP/ocp_get_all_pods_in_cluster.sh -c $clus -f /tmp/lll_$clus.csv
+#              bash $Xflag OCP/ocp_get_all_pods_in_cluster.sh -c $clus -f /tmp/lll_$clus.csv
+#            done
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/OCPstat.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Check DF') {
+      when { expression { params.checkDF == true } }
+      steps {
+        script {
+          env.PHASE='CheckDF'
+          sh '''
+            set +x
+            sudo bash $Xflag GEN/get_df_all_hosts.sh
+            sudo bash $Xflag GEN/check_all_phys_disks.sh
+            sudo bash $Xflag GEN/check_all_nodes.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/statfile.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/diskfile.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/nodesstat.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Get Various Host Types') {
+      when { expression { params.CheckHosts == true } }
+      steps {
+        script {
+          env.PHASE='GetHostTypes'
+          sh '''
+            set +x
+             sudo bash $Xflag CDP/cdh_get_all_hosts.sh
+             sudo bash $Xflag CDP/hdp_get_all_hosts.sh
+             sudo bash $Xflag MAPR/mapr_get_all_hosts.sh
+             sudo bash $Xflag CB/cb_get_all_hosts.sh
+             sudo bash $Xflag CAS/cas_get_all_hosts.sh
+             sudo bash $Xflag ES/get_es_all_hosts.sh
+#            echo bash $Xflag OCP/ocp_get_all_pvc.sh
+#            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#            echo check http://$(hostname -i)/ocp_all_pvc.html
+#            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Get Hadoop Hosts') {
+      when { expression { params.GetCDHHosts == true } }
+      steps {
+        script {
+          env.PHASE='GetHadoopHosts'
+          sh '''
+            set +x
+            sudo bash $Xflag CDP/get_all_cluster_hosts_state.sh
+            sudo bash $Xflag CDP/get_all_cluster_hosts_state_short.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/myhome_ALL.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/myhome_short.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('check Uptime') {
+      when { expression { params.checkUptime == true } }
+      steps {
+        script {
+          env.PHASE='checkUptime'
+          sh '''
+            set +x
+            sudo bash $Xflag GEN/check_all_uptime.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/uptimefile.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('check Touchfile') {
+      when { expression { params.checkTouch == true } }
+      steps {
+        script {
+          env.PHASE='checkTouch'
+          sh '''
+            set +x
+            sudo bash $Xflag GEN/check_all_touchfile.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/touchfile.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('Check AZ Resources') {
+      when { expression { params.checkAZ == true && "${HUDSON_URL}" == "http://xxx.yyy.zzz.aaa:8080/"  } }
+      steps {
+        script {
+          env.PHASE='checkAZResources'
+          sh '''
+            set +x
+            sudo bash $Xflag Azure/az_login.sh
+            sudo bash $Xflag Azure/az_getAllREsources.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/all_az_resources.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+  }
+  }
+  }
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}
