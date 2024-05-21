@@ -1,0 +1,10 @@
+#
+# This file is to contain various errors and possible Root Cause Analysis
+#
+# pod         - is pod name (from deployment)
+# Description - is the error line coming out of "kubectl description pod $pod"
+# Log         - is the error line coming out of "kubectl logs $pod"
+# RCA         - is the Possible Root Cause Analysis
+# Action      - is the Possible Action to run to fix, or get more info about the issue
+Pod,Desciption,Log,RCA,Action
+AAA,ddd,java.lang.IllegalStateException: java.io.FileNotFoundException: /run/secrets/keystores/authoring-clusterclient/keystore-spring.yaml (Permission denied),Missing secret, kubectl get secret sss
