@@ -1,0 +1,88 @@
+#!/bin/bash
+#
+# Name: check_all_uptime.sh
+#
+
+uptimefile=/var/www/html/uptimefile.html
+mv $uptimefile ${uptimefile}.`date +%Y%m%d_%H%M%S`
+WARN=90
+CRIT=95
+
+#---
+echo '
+<!DOCTYPE html>
+<html>
+<head>
+        <meta http-equiv="refresh" content="1800">
+        <title>BDA - List of all Physical Disks</title>
+        <script type="text/javascript" src="myhome/JS/jquery-latest.js"></script>
+        <script type="text/javascript" src="myhome/JS/__jquery.tablesorter.js"></script>
+        <script type="text/javascript" src="myhome/JS/jquery.tablesorter.pager.js"></script>
+        <script type="text/javascript" src="myhome/JS/chili-1.8b.js"></script>
+        <script type="text/javascript" src="myhome/JS/docs.js"></script>
+
+<script type="text/javascript" id="js">$(document).ready(function() {
+        // call the tablesorter plugin
+        $("table").tablesorter({
+                // sort on the first column and third column, order asc
+                sortList: [[0,0],[2,0]]
+        });
+}); </script>
+</head>
+' > $uptimefile
+
+echo "created on `date`" >> $uptimefile
+
+echo '
+<table border="1" cellpadding="3"  id="myTable" class="tablesorter">
+<thead>
+<tr>
+<th>Seq</th>
+<th>Host</th>
+<th>time</th>
+<th>up</th>
+<th>up time</th>
+<th>user(s)</th>
+<th>load average 1</th>
+<th>load average 2</th>
+<th>load average 3</th>
+</tr>
+</thead>
+<tbody>
+' >> $uptimefile
+
+
+cmd="uptime"
+
+logdir=/tmp/Logs_uptime_`date +%Y%m%d_%H%M%S`
+mkdir -p $logdir
+for host in `bash GEN/get_hosts_list.sh `
+do
+  nohup timeout 10 ssh -o ConnectTimeout=3 $host "$cmd" > $logdir/$host.out 2> $logdir/$host.err &
+done
+wait
+
+let i=1
+for file in $logdir/*out
+do
+  host=`echo $file | awk -F/ '{gsub(/.out/,"");print $NF}'`
+  #echo host=$host
+  awk -F, -v host=$host -v ii=$i '
+{n=split($1,a," ");dd=a[1];mm=a[3] " " a[4];gsub("users","");gsub("user","");gsub("load average: ","");}
+NF==6{ printf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",ii,host,dd,mm,$2,$3,$4,$5,$6); }
+NF==5{ printf("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>  </td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n",ii,host,dd,mm,$2,$3,$4,$5); }
+' $file
+let i=${i}+1
+done >> $uptimefile
+
+#---
+
+echo "
+</tbody>
+</table>
+</html>
+" >> $uptimefile
+sed -i 's/days//' $uptimefile
+sed -i 's/day//' $uptimefile
+
+rm -rf $logdir

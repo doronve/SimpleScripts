@@ -1,0 +1,39 @@
+<head>
+  <title>DevOps Homepage</title>
+</head>
+
+<table border="1" cellpadding="3"  id="myTable" class="tablesorter">
+<thead>
+<tr>
+<th>Nightly Scans</th>
+<th>Daily Scans</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> <!-- Nightly -->
+</br>
+<a href="http://HOSTNAME/k8s_ocp_kafka.html"         target="_blank">Kafka Used in K8S</a></br>
+<a href="http://HOSTNAME/scylla_all_keyspaces.html"  target="_blank">Scylla Keyspaces</a></br>
+<a href="http://HOSTNAME/psql_all_databases.html"    target="_blank">PSQL Databases</a></br>
+</br>
+</td> <!-- Nightly -->
+
+<td> <!--Hourly-->
+</br>
+<a href="http://HOSTNAME/myhome_k8s_short.html"      target="_blank">myhome_k8s_short</a></br>
+<a href="http://HOSTNAME/myhome_k8s.html"            target="_blank">myhome_k8s       </a></br>
+<a href="http://HOSTNAME/NSOCPstat.html"             target="_blank">NSOCPstat</a></br>
+<a href="http://HOSTNAME/OCPstat.html"               target="_blank">OCPstat</a></br>
+<a href="http://HOSTNAME/statfile.html"              target="_blank">statfile</a></br>
+<a href="http://HOSTNAME/diskfile.html"              target="_blank">diskfile</a></br>
+<a href="http://HOSTNAME/nodesstat.html"             target="_blank">nodesstat</a></br>
+<a href="http://HOSTNAME/myhome_ALL.html"            target="_blank">myhome_ALL</a></br>
+<a href="http://HOSTNAME/myhome_short.html"          target="_blank">myhome_short</a></br>
+<a href="http://HOSTNAME/uptimefile.html"            target="_blank">VM Uptime</a></br>
+<a href="http://HOSTNAME/touchfile.html"             target="_blank">VM Availability</a></br>
+<a href="http://HOSTNAME/all_az_resources.html"      target="_blank">all_az_resources</a></br>
+
+</td> <!--Hourly-->
+</tbody>
+</table>

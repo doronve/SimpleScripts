@@ -1,0 +1,286 @@
+<td><a href=
+http://10.232.83.9/nagios/
+ target=
+_blank
+><IMG SRC=
+http://assets.nagios.com/images/header/Nagios.png
+ alt=
+Nagios logo
+ height=
+40
+ width=
+170
+></a></td>
+<td><a href=
+http://10.232.83.137:8080
+ target=
+_blank
+ ><IMG SRC=
+http://ambari.apache.org/images/apache-ambari-project.jpg
+ alt=
+Ambari logo
+></a></td>
+<td><a href=
+http://10.232.83.186:7180/cmf/home
+ target=
+_blank
+ ><IMG SRC=
+http://cloudera.com/etc/designs/cloudera/static/i/logo/cloudera-small.png
+ alt=
+cloudera logo
+></a></td>
+<td><a href=
+http://10.232.83.85:8080/
+ target=
+_blank
+ ><IMG SRC=
+http://regmedia.co.uk/2012/07/03/ibm_biginsights_hadoop.jpg
+ alt=
+IBM BI logo
+ height=
+84
+ width=
+168
+></a></td>
+<td><a href=
+https://10.232.83.9/cobbler_web
+ target=
+_blank
+><IMG SRC=
+http://www.cobblerd.org/images/logo-brand.png
+ alt=
+Cobbler logo
+ ></a></td>
+<td><a href=
+http://10.232.83.139:8088/
+ target=
+_blank
+ ><IMG SRC=
+http://cdn1.tnwcdn.com/wp-content/blogs.dir/1/files/2012/11/hadoop_mapreduce.jpg
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+60
+>h139 Yarn</a></td>
+<td><a href=
+http://10.232.83.186:50030/
+ target=
+_blank
+ ><IMG SRC=
+http://cdn1.tnwcdn.com/wp-content/blogs.dir/1/files/2012/11/hadoop_mapreduce.jpg
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+60
+>h186 JobTracker</a></td>
+<td><a href=
+http://10.232.83.89:50030/
+ target=
+_blank
+ ><IMG SRC=
+http://cdn1.tnwcdn.com/wp-content/blogs.dir/1/files/2012/11/hadoop_mapreduce.jpg
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+60
+>h89 JobTracker</a></td>
+<td><a href=
+http://10.232.83.21/latest_nmap.xml
+ target=
+_blank
+><IMG SRC=
+http://nmap.org/images/sitelogo.png
+ alt=
+nmap logo
+ height=
+45
+ width=
+84
+>latest nmap</a></td>
+<td><a href=
+http://10.232.83.138:50070/
+ target=
+_blank
+ ><IMG SRC=
+http://img.wandisco.com/content/newsletters/november2012/hadoop.jpg
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+60
+>h138 NameNode</a></td>
+<td><a href=
+http://10.232.83.186:50070/
+ target=
+_blank
+ ><IMG SRC=
+http://img.wandisco.com/content/newsletters/november2012/hadoop.jpg
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+60
+>h186 NameNode</a></td>
+<td><a href=
+http://10.232.83.85:50070/
+ target=
+_blank
+ ><IMG SRC=
+http://img.wandisco.com/content/newsletters/november2012/hadoop.jpg
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+60
+>h85 NameNode</a></td>
+<td><a href=
+http://10.232.83.21/latest_nmap_ping.xml
+ target=
+_blank
+><IMG SRC=
+http://nmap.org/images/sitelogo.png
+ alt=
+nmap logo
+ height=
+45
+ width=
+84
+>latest nmap ping</a></td>
+<td><a href=
+http://10.232.83.138:60010/
+ target=
+_blank
+ ><IMG SRC=
+http://hbase.apache.org/images/hbase_logo.png
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+90
+>h138 HBase</a></td>
+<td><a href=
+http://10.232.83.186:60010/
+ target=
+_blank
+ ><IMG SRC=
+http://hbase.apache.org/images/hbase_logo.png
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+90
+>h186 HBase</a></td>
+<td><a href=
+http://10.232.83.85:60010/
+ target=
+_blank
+ ><IMG SRC=
+http://hbase.apache.org/images/hbase_logo.png
+ alt=
+IBM BI logo
+ height=
+60
+ width=
+90
+>h85 HBase</a></td>
+<td><a href=
+https://10.232.83.38:9443/vsphere-client
+ target=
+_blank
+><IMG SRC=
+http://michael.requeny.com/wp-content/uploads/2011/02/vsphere.png
+ alt=
+vsphere logo
+ height=
+42
+ width=
+42
+>vSphere Web client</a></td>
+<td><a href=
+http://10.232.83.138/ganglia
+ target=
+_blank
+><IMG SRC=
+http://www.praesentia.co.jp/groundwork/groundwork_Japanese/images/community/open-source/ganglia.gif
+ alt=
+Ganglia logo
+ height=
+58
+ width=
+150
+>Ganglia h138</a></td>
+<td><a href=
+http://10.232.83.186:8888
+ target=
+_blank
+ ><IMG SRC=
+http://gethue.com/static/images/hue-logo.png
+ alt=
+Cloudera hue
+ height=
+29
+ width=
+100
+>h186 Hue</a></td>
+<td><a href=
+http://10.232.83.24/
+ target=
+_blank
+><IMG SRC=
+http://upload.wikimedia.org/wikipedia/en/2/29/HP_New_Logo_2D.svg
+ alt=
+iLO h24 logo
+ height=
+42
+ width=
+42
+>iLo for Blades Chassis</a></td>
+<td><a href=
+http://10.232.83.138/nagios/
+ target=
+_blank
+><IMG SRC=
+http://assets.nagios.com/images/header/Nagios.png
+ alt=
+Nagios logo
+ height=
+40
+ width=
+170
+>h138 Nagios</a></td>
+<td><a href=
+http://10.232.83.139:11000/
+ target=
+_blank
+><IMG SRC=
+http://oozie.apache.org/images/oozie_200x.png
+ alt=
+Nagios logo
+ height=
+24
+ width=
+100
+>h139 Oozie</a></td>
+<td><iframe width=
+900
+ height=
+40
+ src=
+http://10.232.83.21/latest_nmap_ping.nmap.tail-1
+></iframe></td>
+<td><iframe width=
+900
+ src=
+http://10.232.83.21/latest_nmap_ping.gnmap.diff
+></iframe></td>

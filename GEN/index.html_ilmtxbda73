@@ -1,0 +1,231 @@
+<head>
+  <title>DevOps Homepage</title>
+</head>
+
+<table border="1" cellpadding="3"  id="myTable" class="tablesorter">
+<thead>
+<tr>
+<th>AIA/ADH</th>
+<th>Openshift</th>
+<th>Azure</th>
+<th>PCI/IT</th>
+</tr>
+</thead>
+<tbody>
+
+
+<tr>
+<td> <!-- AIA -->
+<!--<a href="XXX"  target="_blank">YYY</a></br>-->
+</br>
+<b>Dashboard</b>
+</br>
+<a href="https://confluence/display/ATA/DevOps+OnDuty+List"  target="_blank">DevOps On Duty</a></br>
+</br>
+<a href="https://app.daask8s.cloudnative.corp.KUKU.com/accounts/63ecd8c97307f40013f70fcb"                            target="_blank">EMAAS DataONE Dashboard</a></br>
+<a href="https://app.daask8s.cloudnative.corp.KUKU.com/reports/backing-services?accountId=63ecd8c97307f40013f70fcb"  target="_blank">EMAAS DataONE BackingServices</a></br>
+
+</br>
+<a href="https://illin954:18081/view/A Split-Branch-MAIN-VIEW/view/build-master"    target="_blank">Jenkins Dashboard - View-master</a></br>
+<a href="https://illin954:18081/view/A Split-Branch-MAIN-VIEW/view/build-23.12.00"  target="_blank">Jenkins Dashboard - View-23.12</a></br>
+<a href="https://illin954:18081/view/A Split-Branch-MAIN-VIEW/view/build-23.09.00"  target="_blank">Jenkins Dashboard - View-23.09</a></br>
+<a href="https://illin954:18081/view/AIA%2023.03.00%20Builds/"                    target="_blank">Jenkins Dashboard - View-23.03.00</a></br>
+
+</br>
+<b>Documentation</b>
+</br>
+<!--<a href="http://aia-airflow-1.eaas.KUKU.com/"                                   target="_blank">AIA Generated Docs by MKDOCS tool</a></br>-->
+<a href="https://docs-preview-np.azurewebsites.net/index-dataone.html"            target="_blank">AIA Generated Docs by MKDOCS tool</a></br>
+</br>
+</br>
+Jira / Confluence</br>
+</br>
+<a href="https://jira/"                                               target="_blank"> Jira AIA Dashboard </a></br>
+<a href="http://confluence/display/ATA" 			      target="_blank"> Confluence AIA </a></br>
+<a href="http://confluence/display/BD/DevOps+-+Infra"                 target="_blank"> Confluence AIA Infra </a></br>
+<a href="https://bitbucket/projects/BDA" 			      target="_blank"> BitBucket </a></br>
+</br>
+<b>Monitoring</b>
+</br>
+<a href="http://ilmtxbda73.corp.KUKU.com/myhome_k8s_short.html"  target="_blank">AIA K8S Clusters</a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/myhome.html"            target="_blank">Hadoop cluster - BDA    </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/myhome_short.html"      target="_blank">Hadoop cluster - BDA - short List  </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/myhome_ALL.html"        target="_blank">Hadoop cluster - ALL </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/nodesstat.html"         target="_blank">All Servers - Generic Stats </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/statfile.html"          target="_blank">All servers - Df Status </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/touchfile.html"         target="_blank">All servers - touch Status </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/uptimefile.html"        target="_blank">All servers - Uptime </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/diskfile.html"          target="_blank">Physical servers - Disks status </a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/crontabfile.html"       target="_blank">All crontabs on all nodes       </a></br>
+
+<!-- old stuff -->
+<!--<a href="http://ilmtxbda73.corp.KUKU.com/vmsfile.html"           target="_blank">All VMs</a></br>-->
+<!--<a href="http://ilmtxbda73.corp.KUKU.com/myhome_NFT.html"        target="_blank">Hadoop cluster - NFT</a></br>-->
+<!--<a href="http://ilmtxbda73.corp.KUKU.com/lsoffile.html"          target="_blank">All servers - lsof</a></br>-->
+<!--<a href="http://ilmtxbda73.corp.KUKU.com/esfile.html"            target="_blank">All servers - Elastic Search </a></br>-->
+
+</br>
+<b>Jenkins</b></br>
+<a href="https://illin954:18081/"                                      target="_blank"> illin954 Jenkins</a></br>
+<a href="http://aia-jenkins.eaas.KUKU.com:8080/monitoring"          target="_blank"> Jenkins Monitoring     </a></br>
+<a href="http://aia-jenkins.eaas.KUKU.com:8080/jqs-monitoring"      target="_blank"> Jenkins JQS Monitoring </a></br>
+<a href="http://aia-jenkins.eaas.KUKU.com:8080/"                    target="_blank"> Jenkins      AIA       </a></br>
+<a href="http://adh-jenkins-dvci.eaas.KUKU.com:8080/"               target="_blank"> Jenkins NEW  ADH       </a></br>
+<a href="http://illin2176.corp.KUKU.com:9080/"                      target="_blank"> Jenkins      BDA.9.3.0 </a></br>
+<!--<a href="http://engage-jenkins-1.eaas.KUKU.com:8080/"               target="_blank"> Jenkins      Engage    </a></br>-->
+<a href="http://illin4574.corp.KUKU.com:8081/"                      target="_blank"> AIA OLD Artifactory    </a></br>
+<a href="http://illin5566.corp.KUKU.com:19090/"                     target="_blank"> Digital SonarQube AIA  </a></br>
+</br>
+<b>EaaS</b></br>
+<a href="https://cloud-prd-eaasnga.corp.KUKU.com/tenant/bda-il"        target="_blank"> Israel EaaS </a></br>
+<a href="https://ind-cloud-prd-eaasnga.corp.KUKU.com/tenant/bda-in"    target="_blank"> DVCI   EaaS </a></br>
+<a href="https://cloud-prd-eaasnga.corp.KUKU.com/tenant/APS2-IL"       target="_blank"> APS    EaaS </a></br>
+<a href="https://cloud-prd-eaasnga.corp.KUKU.com/tenant/pontis-il"     target="_blank"> Pontis EaaS </a></br>
+</br>
+</td> <!-- AIA -->
+<td> <!--OpenShift-->
+</br>
+<b>OpenShift</b>
+</br>
+<a href="http://aia-jenkins.eaas.KUKU.com/OCP_lock_status_all.html"  target="_blank">OCP 408 Lock Status</a></br>
+</br>
+<a href="http://ilvpbg2919:41244/view/BDA%20-%20OCP%20Self%20Services/job/PROMETHEUS_ADAPTER%20Upgrade%20Self%20Service"  target="_blank">Pipeline PROMETHEUS_ADAPTER Upgrade Self Service</a></br>
+<a href="http://ilvpbg2919:41244/view/BDA%20-%20OCP%20Self%20Services/job/BDA%20-%20Insecure%20Registry%20Update"         target="_blank">Pipeline BDA - Insecure Registry Update</a></br>
+<a href="http://ilvpbg2919:41244/view/CRD%20Components%20upgrade/job/CRD%20Components%20Upgrade"                          target="_blank">Pipeline CRD Components Upgrade</a></br>
+</br>
+</br>
+
+<a href="http://aia-jenkins.eaas.KUKU.com/OCP_lock_status-2309.html"  target="_blank">OCP 401 Lock Status-2309</a></br>
+</br>
+<a href="http://ilmtxbda73/ocp_all_nodes_state.html"                    target="_blank">All OCP Nodes Status    </a></br>
+</br>
+<a href="https://illin954:18081/view/DataOne-new/job/OCP_cluster_namespace_permission/job/master" target="_blank">Add Permissions on Namespace</a></br>
+</br>
+
+<a href="https://ilocpmon:3000/d/l_PQySyMz/01-ocp-main-dashboard?orgId=1&var-bu=DO" target="_blank">OCP Dashboard</a></br>
+<a href="http://ilvpbg2919:41244/job/BDA%20-%20Delete%20Namespace/build"            target="_blank">OCP Self Service Delete Namespace</a></br>
+<a href="https://KUKUprodmain.service-now.com/one_portal?id=aop_sc_cat_item&sys_id=669f6893dbea170cc7866bc1ca961981"
+   target="_blank">OCP - SERVICE REQUEST - AT OpenShift Issues</a></br>
+<a href="https://KUKUprodmain.service-now.com/one_portal?id=aop_sc_cat_item&sys_id=5538f946db23ef40b77d320a6896194e"
+   target="_blank" >Openshift SNOW</a></br>
+</br>
+<a href="http://ilmtxbda73/ocp_projects.html"      target="_blank">All Openshift Projects</a></br>
+<a href="http://ilmtxbda73/ocp_all_pvc.html"       target="_blank">All ocp PVC</a></br>
+<a href="http://ilmtxbda73/ocp_all_exp_dates.html" target="_blank">All ocp Expiration Dates</a></br>
+</br>
+
+<!--<a href="http://ilmtxbda73/all_pods_ilocpaps417.html"      target="_blank">All Pods ilocpaps417</a></br>-->
+<a href="http://ilmtxbda73/all_pods_ilocpat402.html"       target="_blank">All Pods ilocpat402</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocpdo401.html"       target="_blank">All Pods ilocpdo401</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocpdo402.html"       target="_blank">All Pods ilocpdo402</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocpdo403.html"       target="_blank">All Pods ilocpdo403</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocpdo404.html"       target="_blank">All Pods ilocpdo404</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocpdo408.html"       target="_blank">All Pods ilocpdo408</a></br>
+<!--<a href="http://ilmtxbda73/all_pods_ilocplab403.html"      target="_blank">All Pods ilocplab403</a></br>-->
+<a href="http://ilmtxbda73/all_pods_ilocppnts403.html"     target="_blank">All Pods ilocppnts403</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocppntsnft402.html"  target="_blank">All Pods ilocppntsnft402</a></br>
+<a href="http://ilmtxbda73/all_pods_inocpaia402.html"      target="_blank">All Pods inocpaia402</a></br>
+<a href="http://ilmtxbda73/all_pods_inocpaianft401.html"   target="_blank">All Pods inocpaianft401</a></br>
+<a href="http://ilmtxbda73/all_pods_inocpdo401.html"       target="_blank">All Pods inocpdo401</a></br>
+<a href="http://ilmtxbda73/all_pods_ilocpbmpoc401.html"    target="_blank">All Pods ilocpbmpoc401</a></br>
+</br>
+</br>
+<b>Backing Services</b>
+</br>
+<a href="http://ilmtxbda73/scylla_all_keyspaces.html"               target="_blank">All Scylla    Keyspaces</a></br>
+<a href="http://ilmtxbda73.corp.KUKU.com/psql_all_databases.html" target="_blank">All PSQL      Databases</a></br>
+<a href="http://ilmtxbda73/cas_all_keyspaces.html"                  target="_blank">All Cassandra Keyspaces</a></br>
+<a href="http://ilmtxbda73/k8s_ocp_kafka.html"                      target="_blank">All k8s/ocp kafka brokers</a></br>
+</br>
+</br>
+<b>OCP Clusters Statistics</b>
+</br>
+<a href="http://aia-jenkins.eaas.KUKU.com/ocp_cluster_statistics-ilocpdo408.html"               target="_blank">ilocpdo408_statistics</a></br>
+<a href="http://aia-jenkins.eaas.KUKU.com/ocp_cluster_statistics-ilocpdo404.html"               target="_blank">ilocpdo404_statistics</a></br>
+<a href="http://aia-jenkins.eaas.KUKU.com/ocp_cluster_statistics-ilocpdo401.html"               target="_blank">ilocpdo401_statistics</a></br>
+<a href="http://aia-jenkins.eaas.KUKU.com/ocp_cluster_statistics-ilocpat402.html"               target="_blank">ilocpat402_statistics</a></br>
+</td> <!--OpenShift-->
+<td> <!-- Azure -->
+<b>AWS</b>
+</br>
+</br>
+<a href="https://aws-ire-cpsso.corp.KUKU.com/PortalMain" target="_blank">AWS Umbrella</a></br>
+<a href="https://myapps.microsoft.com/"                    target="_blank">My Apps - go to 'AWS IAM Identity'</a></br>
+</br>
+<a href="http://100.65.16.201:8080/"                       target="_blank">AWS Jenkins for AIA - NEW</a></br>
+</br>
+<b>AZURE</b>
+</br>
+</br>
+<a href="https://azr-ire-cpsso.corp.KUKU.com/PortalMain" target="_blank">Azure Umbrella </a></br>
+<a href="https://portal.azure.com"                         target="_blank">Azure Portal </a></br>
+ login with KUKU account
+</br>
+</br>
+<a href="http://100.72.110.4:8080/"                        target="_blank">MPDK Jenkins for NFT-BSS </a></br>
+<a href="http://100.72.34.5:8080/"                         target="_blank">MPDK Jenkins for AIA - NEW</a></br>
+<a href="http://100.72.34.4:8080/"                         target="_blank">MPDK Jenkins for AIA - OLD</a></br>
+</br>
+<a href="http://ilmtxbda73/az_scylla.html"                 target="_blank">AZ Scylla Versions</a></br>
+<a href="http://ilmtxbda73/az_vm_list.html"                target="_blank">All Azure VMs </a></br>
+<a href="http://ilmtxbda73/az_storage_account_list.html"   target="_blank">All Azure Storage Accounts </a></br>
+<a href="http://ilmtxbda73/az_disks.html"                  target="_blank">All Azure Disks </a></br>
+<a href="http://ilmtxbda73/az_SQL_Servers_list.html"       target="_blank">All Azure SQL Servers </a></br>
+<a href="http://ilmtxbda73/az_SQL_DB_list.html"            target="_blank">All Azure SQL Servers DB</a></br>
+</br>
+proxy=cloudproxy: 10.67.4.6
+</br>
+</br>
+<b>LAB</b>
+</br>
+<a href="http://illin5642:18080/job/Deploy-DataONE-with-properties"                                      target="_blank">LAB Jenkins Job to Create the LAB</a></br>
+<a href="https://console-openshift-console.apps.ilocplab403.ocpd.corp.KUKU.com/k8s/cluster/projects"   target="_blank">LAB OCP</a></br>
+<a href="http://aia-ui-frontend-dataone-145-auth.apps.ilocplab403.ocpd.corp.KUKU.com/home"             target="_blank">LAB AIA UI</a></br>
+<a href="http://aia-jenkins-jenkins-dataone-145-auth.apps.ilocplab403.ocpd.corp.KUKU.com/"             target="_blank">LAB Internal Jenkins</a></br>
+
+</td> <!-- Azure -->
+<td> <!-- PCI / IT -->
+<b>AMAIZ</b>
+</br>
+<a href="http://amaiz-1.eaas.KUKU.com:5050/login" target="_blank" >AMAIZ 1</a></br>
+<a href="http://illin9551:5050/login"               target="_blank" >AMAIZ 2</a></br>
+</br>
+<b>PCI/IT</b>
+</br>
+<a href="https://ilvcat01.corp.KUKU.com/ui" target="_blank" >New VMWare Cluster for NFT</a></br>
+<a href="http://ilvpbg536:30105/pci_tools/index.html" target="_blank" >PCI Tools Self Service</a></br>
+<a href="http://ilocpmon:3000/d/ErZKPf9mk/ocp-main-dashboard?refresh=5m&orgId=1&var-bu=BDA&var-alias=All"
+   target="_blank" >PCI Tools Grafana Monitoring</a></br>
+<b>3rd Party SW Support</b>
+</br>
+<a href="https://attunitysupport.qlik.com/s/" target="_blank" >Attunity / Qlik  Support</a></br>
+User: <b>KUKU_dev_external@KUKU.com</b>
+</br>
+Password: <b>Darth_Vader_1</b>
+</br>
+<b>IT Support</b>
+</br>
+<a href="http://itpbg-prd-jen:18080/view/AIA/" target="_blank" >http: IT Jenkins Self Service</a></br>
+<a href="mailto:ITBTGUNIXPBG@int.KUKU.com"> mail: General Linux - *IT BTG UNIX PBG</a></br>
+<a href="mailto:ITBTGOCPSUPPORT@int.KUKU.com"> mail: OCP - *IT BTG OCP_Support</a></br>
+<a href="mailto:ITEAASSUPPORT@int.KUKU.com"> mail: EAAS - *IT EAASSUPPORT </a></br>
+</br>
+<a href="https://galaxy.corp.KUKU.com/arsys/forms/cmdb-puap/SHR%3ALandingConsole/Default+Administrator+View/?cacheid=2d7df9ab" target="_blank"> CMDB </a></br>
+<a href="https://cmdbsocm:8443/survey/"                                                                                          target="_blank"> DCMS Portal </a></br>
+</br>
+Other SW
+</br>
+<a href="http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html"
+target="_blank"> JDK Download Old Versions </a></br>
+<a href="https://illinbdsi035:3552/attunityreplicate" target="_blank"> Attunity on illinbdsi035</a></br>
+</td> <!-- PCI / IT -->
+</tbody>
+</table>
+
+</br>
+<a href="https://www.youtube.com/watch?v=TdJKZ23FghY" target="_blank"> This is the End</a></br>
+</br>
+
+</br>
+</br>
+</br>
