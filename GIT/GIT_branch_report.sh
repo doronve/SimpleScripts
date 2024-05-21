@@ -45,7 +45,7 @@ function Usage()
   echo "       HTML output file - where the html will be written. default is '/var/www/html/GIT_branch_report.html'"
   echo "Note - provide either -f flag or -u flag. if provided both - will use the file"
   echo "Example1: $(basename $0) -f consoleText -o /var/www/html/git_repo_branches.html"
-  echo "Example2: $(basename $0) -u http://illin954:18080/view/DevOps%20Tools/job/RunGitCommandOnAllRepos/47/consoleText -o /var/www/html/git_repo_branches.html"
+  echo "Example2: $(basename $0) -u http://JENKINSSERVER:18080/view/DevOps%20Tools/job/RunGitCommandOnAllRepos/47/consoleText -o /var/www/html/git_repo_branches.html"
   echo ""
   exit 1
 }

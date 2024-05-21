@@ -26,10 +26,10 @@
 <a href="https://app.daask8s.cloudnative.corp.KUKU.com/reports/backing-services?accountId=63ecd8c97307f40013f70fcb"  target="_blank">EMAAS DataONE BackingServices</a></br>
 
 </br>
-<a href="https://illin954:18081/view/A Split-Branch-MAIN-VIEW/view/build-master"    target="_blank">Jenkins Dashboard - View-master</a></br>
-<a href="https://illin954:18081/view/A Split-Branch-MAIN-VIEW/view/build-23.12.00"  target="_blank">Jenkins Dashboard - View-23.12</a></br>
-<a href="https://illin954:18081/view/A Split-Branch-MAIN-VIEW/view/build-23.09.00"  target="_blank">Jenkins Dashboard - View-23.09</a></br>
-<a href="https://illin954:18081/view/AIA%2023.03.00%20Builds/"                    target="_blank">Jenkins Dashboard - View-23.03.00</a></br>
+<a href="https://JENKINSSERVER:18081/view/A Split-Branch-MAIN-VIEW/view/build-master"    target="_blank">Jenkins Dashboard - View-master</a></br>
+<a href="https://JENKINSSERVER:18081/view/A Split-Branch-MAIN-VIEW/view/build-23.12.00"  target="_blank">Jenkins Dashboard - View-23.12</a></br>
+<a href="https://JENKINSSERVER:18081/view/A Split-Branch-MAIN-VIEW/view/build-23.09.00"  target="_blank">Jenkins Dashboard - View-23.09</a></br>
+<a href="https://JENKINSSERVER:18081/view/AIA%2023.03.00%20Builds/"                    target="_blank">Jenkins Dashboard - View-23.03.00</a></br>
 
 </br>
 <b>Documentation</b>
@@ -66,7 +66,7 @@ Jira / Confluence</br>
 
 </br>
 <b>Jenkins</b></br>
-<a href="https://illin954:18081/"                                      target="_blank"> illin954 Jenkins</a></br>
+<a href="https://JENKINSSERVER:18081/"                                      target="_blank"> JENKINSSERVER Jenkins</a></br>
 <a href="http://aia-jenkins.eaas.KUKU.com:8080/monitoring"          target="_blank"> Jenkins Monitoring     </a></br>
 <a href="http://aia-jenkins.eaas.KUKU.com:8080/jqs-monitoring"      target="_blank"> Jenkins JQS Monitoring </a></br>
 <a href="http://aia-jenkins.eaas.KUKU.com:8080/"                    target="_blank"> Jenkins      AIA       </a></br>
@@ -99,7 +99,7 @@ Jira / Confluence</br>
 </br>
 <a href="http://ilmtxbda73/ocp_all_nodes_state.html"                    target="_blank">All OCP Nodes Status    </a></br>
 </br>
-<a href="https://illin954:18081/view/DataOne-new/job/OCP_cluster_namespace_permission/job/master" target="_blank">Add Permissions on Namespace</a></br>
+<a href="https://JENKINSSERVER:18081/view/DataOne-new/job/OCP_cluster_namespace_permission/job/master" target="_blank">Add Permissions on Namespace</a></br>
 </br>
 
 <a href="https://ilocpmon:3000/d/l_PQySyMz/01-ocp-main-dashboard?orgId=1&var-bu=DO" target="_blank">OCP Dashboard</a></br>
