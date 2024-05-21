@@ -1,0 +1,85 @@
+#!/bin/env groovy
+pipeline {
+  agent {label params['jenkinsNode']}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '2'))
+  }
+  parameters{
+          choice(name: 'PI',            choices: ['PI29','PI28','PI27'], description: 'How many repos to extract. all app or just 10 for testing')
+    booleanParam(name: 'checkLinuxSW',  defaultValue: false, description: 'Run the SW Related PMX on Linux.')
+    booleanParam(name: 'checkOCP',      defaultValue: false, description: 'Run the SW Related PMX on OCP.')
+    booleanParam(name: 'checkDD',       defaultValue: false, description: 'Run the PMX of DD.')
+    booleanParam(name: 'checkOther',    defaultValue: false, description: 'Run Other PMX Issues.')
+          string(name: 'jenkinsNode',   defaultValue: 'pmx', description: 'Jenkins Slave to Run on')
+  }
+  stages {
+    stage('Show PArameters') {
+      steps {
+        script {
+          sh '''
+             set +x
+             echo "checkLinuxSW  = $checkLinuxSW "
+             echo "checkOCP      = $checkOCP "
+             echo "checkDD       = $checkDD "
+             echo "checkOther    = $checkOther "
+             echo "jenkinsNode   = $jenkinsNode "
+          '''
+        }
+      }
+    }
+    stage('Check PMX on Linux') {
+    when { expression { params.checkLinuxSW == true } }  
+      steps {
+        script {
+          sh '''
+             set +x
+             echo bash PMX/check_Linux_pmx.sh -p ${PI}
+             bash PMX/check_Linux_pmx.sh -p ${PI}
+          '''
+        }
+      }
+    }
+    stage('Check PMX on OCP') {
+    when { expression { params.checkOCP == true } }  
+      steps {
+        script {
+          sh '''
+             set +x
+             echo bash PMX/check_OCP_pmx.sh
+             bash PMX/check_OCP_pmx.sh
+          '''
+        }
+      }
+    }
+    stage('Check PMX of DD') {
+    when { expression { params.checkDD == true } }  
+      steps {
+        script {
+          sh '''
+             set +x
+             echo bash PMX/check_DD_pmx.sh
+             bash PMX/check_DD_pmx.sh
+          '''
+        }
+      }
+    }
+    stage('Check Other PMX') {
+    when { expression { params.checkOther == true } }  
+      steps {
+        script {
+          sh '''
+             set +x
+             echo bash PMX/check_Other_pmx.sh
+             bash PMX/check_Other_pmx.sh
+          '''
+        }
+      }
+    }
+  }
+  post {
+    always  { echo 'Always!' }
+    success { echo 'I succeeded!' }
+    failure { echo 'I Failed!' }
+  }
+}

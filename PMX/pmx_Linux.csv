@@ -1,0 +1,73 @@
+FQDN , OS      , Java   , Helm   , Cloudera , PostgreSQL , RA Server , Cassandra , Scylla  , Docker , Kubectl , Elas   , Attunity , Oracle , JEnkins Slave , MySQL , Couchbase , MYUSAGE
+PI29 , RHEL8.x , 17.0.9 , 3.13.1 , 7.1.7    , 15.5       , 2.4.x     , 3.11      , 2024.2.x, 25.x   , 25.x    , 8.10.2 , 5.1      , 19.0.x , v2.426.1      , 111   , 5.1       , Green
+PI28 , RHEL8.x , 17.0.9 , 3.11.1 , 7.1.7    , 14.5       , 2.4.x     , 3.11      , 2024.2.x, 25.x   , 25.x    , 8.10.2 , 5.1      , 19.0.x , v2.426.1      , 111   , 5.1       , Yellow
+PI27 , RHEL8.x , 17.0.9 , 3.11.1 , 7.1.7    , 14.5       , 2.4.x     , 3.11      , 2024.2.x, 25.x   , 25.x    , 8.10.2 , 5.1      , 19.0.x , v2.426.1      , 111   , 5.1       , Orange
+PI26 , RHEL8.x , 17.0.9 , 3.11.1 , 7.1.7    , 14.5       , 2.4.x     , 3.11      , 2024.2.x, 25.x   , 25.x    , 8.10.2 , 5.1      , 19.0.x , v2.426.1      , 111   , 5.1       , Red
+
+
+
+
+All,Linux,OpenJDK,Java,17.0.9
+All,TBD,MSNEXT,MSNEXT,7.2.x
+All,TBD,Spring,Spring Framework,6.0.16
+All,TBD,Spring,Spring Boot,3.1.8
+All,TBD,Spring,Spring Cloud - Spring Cloud Kilburn,2022.0.5
+All,TBD,Kafka,Kafka Java Client,3.5.x
+OCP,Linux,Container OS,Container OS,RHEL 8.x
+AWS,Linux,Container OS,Container OS,AML2
+Azure,Linux,Container OS,Container OS,Ubuntu_22.04
+OCP,Linux,Container Runtime Platform ,OCP,4.12
+OCP,Linux,k8s infra,HELM,3.13.1
+OCP,Pod,KMS,HashiCorp Vault,1.15.4
+OCP,Pod,Service Mesh,Istio Community,1.21.1
+Azure,Linux,Container Runtime Platform ,AKS,1.28
+Azure,Linux,k8s infra,HELM,3.13.1
+Azure,Pod,Service Mesh,Istio Community,1.21.2
+All,Pod,Elastic,ECK,2.9
+All,Pod,Elastic,Elastic Stack,8.10.2
+All,Pod,Elastic,Filebeat by Elastic,8.9
+All,Pod,Elastic,Kibana,8.9
+All,Pod,Kafka,Confluent,7.5
+All,Pod,Kafka,Confluent CFK,2.7.3
+All,Linux,Kafka,Cloudera,7.1.7
+All,Linux,Kafka,Cloudera OS,8.8
+OCP,Linux,Database for PostgreSQL,IBM PG FOSS,15.5
+AWS,Linux,Database for PostgreSQL,AWS RDS,15.5
+Azure,Linux,Database for PostgreSQL,Azure Flexi,15.4
+All,Pod,Grafana,Grafana,9.x
+OCP,Linux,Backing Services VM OS ,OS,RHEL 8.8
+AWS,Linux,Backing Services VM OS ,OS,AML2
+Azure,Linux,Backing Services VM OS ,OS,Ubuntu 22.04
+All,Linux,PKI RA Server (OCP & AWS) ,RA Server,2.4.x
+Azure,Linux,MPDK Setup,MPDK Setup for Azure,3.4.x
+All,Linux,MPDK Deploy,MPDK Deploy,1.43.x
+All,TBD,Release Process,Release Process,2.9.x
+All,TBD,MS360 Include EDs,MS360-BASELINE-ED,24.03.01.xx
+All,TBD,MS360 Include EDs,NT-OBSERVABILITY,24.03.01.xx
+All,TBD,MS360 Include EDs,MS360-PLT-BS-ED,24.03.01.xx
+All,Pod,Prometheus,Prometheus Adapter,1.2.x
+All,Pod,Prometheus,Prometheus Adapter Connector,1.0.x
+All,Pod,Airflow,Airflow application,2.8.x
+All,Pod,Airflow,Airflow Helm Chart,1.13.1
+All,Linux,Scylla,Scylla DB,2024.1.1
+All,TBD,Scylla,Scylla Driver,4.15.0.1
+All,Linux,Scylla,Scylla Monitoring,4.6
+All,Linux,Scylla,Scylla Manager,3.2.x
+All,Pod,Spark,Spark,3.5.0
+All,Pod,Spark,Spark Operator Chart,v1beta2-1.3.3-3.1.1
+All,Pod,Spark,Spark history server Chart,2.4.0
+All,Pod,Spark,Spark Cassandra Connector,3.5
+All,Pod,Spark,Spark Sql,2.12
+All,Pod,Spark,Spark Sql Kafka,2.12
+All,Pod,Kafka Connect,Kafka Connect,2.13.-3.5.1
+All,Pod,Kafka Connect,Snowflake Kafka Connector,2.2.0
+All,Pod,Kafka Lag Exporter,Kafka Lag Exporter,0.8.3-SNAPSHOT
+All,TBD,fabric8,kubernetes-client,6.10.0
+All,Pod,SQLLite,SQLLite,3.45.1
+All,Linux,Docker Engine,docker ce,25.0.x
+All,TBD,Snowflake,Snowflake JDBC Driver,3.15.0
+All,TBD,Snowflake,Snowflake Spark,2.14.0-spark_3.4
+All,Linux,Jenkins,Jenkins,v2.426.1
+OCP,Linux,oc - OCP client,oc,4.12
+All,Linux,kubectl - K8s Client,kubectl,v1.26.1
+All,Linux,Oracle Goldengate Big Data Adapter,oracle GG,19.1.0.0.5.007
