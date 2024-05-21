@@ -1,0 +1,65 @@
+pipeline {
+  parameters {
+      string(name: 'PREFIX',    defaultValue: "changeme",          description: 'Prefix Name')
+      choice(name: 'RunType',   choices: ['DryTun','Delete'],      description: 'Dry Run or Delete')
+      choice(name: 'CLUSTER',   choices: ['changeme','cdp71-acl-playbook-1.eaas.KUKU.com','cdp71-rh8-ind-1.eaas.KUKU.com','cdp7-ae-acl-1.eaas.KUKU.com','cdp71-e2e-acl-1.eaas.KUKU.com'],      description: 'which cluster')
+      choice(name: 'Xflag',     choices: [' ','-x'],               description: 'for Debugfing: put "-x" flag for bash commands')
+  }
+  agent {label 'rhel8'}
+  options {
+    // disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '30'))
+  }
+  stages {
+    stage('Show build Parameters') {
+      steps {
+        script {
+          echo 'Show build Parameters'
+          sh '''
+            set +x
+            echo ================================================================================
+            echo Parameters:
+            echo PREFIX         = ${PREFIX}
+            echo RunType        = ${RunType}
+            echo CLUSTER        = ${CLUSTER}
+            echo Xflag          = ${Xflag}
+            echo ""
+            echo ================================================================================
+          '''
+        }
+      }
+    }
+    stage('Get All Kafka Topics') {
+      steps {
+        script {
+          env.PHASE='GetKT'
+          sh '''
+            echo bash $Xflag KAFKA/kafka_list_topics_by_prefix.sh -p ${PREFIX} -c ${CLUSTER}
+            bash $Xflag KAFKA/kafka_list_topics_by_prefix.sh -p ${PREFIX} -c ${CLUSTER}
+          '''
+        }
+      }
+    }
+    stage('Delete Topics') {
+      when { expression { params.RunType == "Delete" } }
+      steps {
+        script {
+          env.PHASE='DelTP'
+          sh '''
+            echo bash $Xflag KAFKA/kafka_delete_topics_by_prefix.sh -p ${PREFIX} -c ${CLUSTER}
+            bash $Xflag KAFKA/kafka_delete_topics_by_prefix.sh -p ${PREFIX} -c ${CLUSTER}
+          '''
+        }
+      }
+    }
+  }
+ 
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}
