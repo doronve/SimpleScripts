@@ -1,0 +1,8 @@
+ContainerStatusUnknown
+CrashLoopBackOff
+CreateContainerConfigError
+CreateContainerError
+Error
+ImagePullBackOff
+Init:CrashLoopBackOff
+Init:ImagePullBackOff

@@ -1,0 +1,14 @@
+s/CrashLoopBackOff/<font color="red">CrashLoopBackOff<\/font>/
+s/InitateContainerError/<font color="red">InitateContainerError<\/font>/
+s/ImagePullBackOff/<font color="red">ImagePullBackOff<\/font>/
+s/Pending/<font color="orange">Pending<\/font>/
+s/ContainerCreating/<font color="orange">ContainerCreating<\/font>/
+s/PodInitializing/<font color="orange">PodInitializing<\/font>/
+s/InitgePullBackOff/<font color="red">InitgePullBackOff<\/font>/
+s/CreateContainerError/<font color="red">CreateContainerError<\/font>/
+s/OOMKilled/<font color="red">OOMKilled<\/font>/
+s/Error/<font color="red">Error<\/font>/
+s/Init/<font color="orange">Init<\/font>/
+s/Terminating/<font color="purple">Terminating<\/font>/
+s/Completed/<font color="green">Completed<\/font>/
+s/Running/<font color="green">Running<\/font>/

@@ -1,0 +1,93 @@
+pipeline {
+  agent {label 'slaves5'}
+  parameters{
+booleanParam(name: 'getList',   defaultValue: true, description: 'Flag to Get the List of all projects and expiration dates')
+booleanParam(name: 'UpdateNS',  defaultValue: true, description: 'Flag to run update exporation data in namespaces')
+booleanParam(name: 'SendMail',  defaultValue: true, description: 'Flag to Send Warning mails')
+booleanParam(name: 'DeleteNS',  defaultValue: true, description: 'Flag to run delete old namespaces')
+      string(name: 'mailTo',    defaultValue: "doronve@KUKU.com", description: 'mail list')
+      //string(name: 'mailTo',  defaultValue: "DIRnDISR@int.KUKU.com,DIRnDDVCI@int.KUKU.com,CrossPortfolioDeliveryTMODataOne@int.KUKU.com", description: 'mail list')
+  }
+  stages {
+     stage('Update list of projects with expiration date') {
+     when { expression { params.getList == true } }
+      steps {
+        script {
+//TODO add relevant script
+          sh '''
+            echo "bash OCP/ocp_get_all_exp_dates.sh 1"
+            bash OCP/ocp_get_all_exp_dates.sh 1
+          '''
+        }
+      }
+    }
+     stage('Update expiration date') {
+     when { expression { params.UpdateNS == true } }
+      steps {
+        script {
+//TODO add relevant script
+          sh '''
+            echo "bash OCP/delete_old_ns.sh"
+            echo bash OCP/delete_old_ns.sh
+          '''
+        }
+      }
+    }
+     stage('Send warning mail') {
+     when { expression { params.SendMail == true } }
+      steps {
+        script {
+//TODO add relevant script
+          sh '''
+            echo "bash OCP/delete_old_ns.sh"
+            #bash OCP/delete_old_ns.sh
+          '''
+        }
+      }
+    }
+     stage('Delete old NS') {
+     when { expression { params.DeleteNS == true } }
+//TODO add relevant script
+      steps {
+        script {
+          sh '''
+            echo "bash OCP/delete_old_ns.sh"
+            #bash OCP/delete_old_ns.sh
+          '''
+        }
+      }
+    }
+     stage('sending mails') {
+      steps {
+        script {
+          sh '''
+            echo "sending mail to all the project that will be delete in the next 2 days "
+          '''
+        }
+      }
+    }
+  }
+  post {
+    success {
+       sh '''
+        echo 'Deletion succeeded!'
+        echo 'These namespaces where deleted:'
+        echo cat  /tmp/deleteScript.sh
+       '''
+       script{
+        def output_list = readFile("/tmp/deleteScript")
+        if (output_list.size() > 1){
+          //emailext (to: 'DIRnDISR@int.KUKU.com,DIRnDDVCI@int.KUKU.com,CrossPortfolioDeliveryTMODataOne@int.KUKU.com',
+        //  emailext (to: 'jagans@KUKU.com',
+          emailext (to: params.mailTo,
+            subject: "OpenShift Cluster manager - These NS will be deleted in the next 72 hours",
+            body: '${FILE,path="/tmp/mail.html"}',
+            mimeType: 'text/html')
+        }
+       }
+    }
+    failure {
+      echo 'Deletion Failed!'
+    }
+  }
+}
