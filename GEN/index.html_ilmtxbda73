@@ -43,7 +43,7 @@ Jira / Confluence</br>
 <a href="https://jira/"                                               target="_blank"> Jira AIA Dashboard </a></br>
 <a href="http://confluence/display/ATA" 			      target="_blank"> Confluence AIA </a></br>
 <a href="http://confluence/display/BD/DevOps+-+Infra"                 target="_blank"> Confluence AIA Infra </a></br>
-<a href="https://bitbucket/projects/BDA" 			      target="_blank"> BitBucket </a></br>
+<a href="https://GITSERVER/projects/BDA" 			      target="_blank"> BitBucket </a></br>
 </br>
 <b>Monitoring</b>
 </br>

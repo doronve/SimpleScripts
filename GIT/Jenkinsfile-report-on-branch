@@ -1,0 +1,62 @@
+#!/bin/env groovy
+pipeline {
+  agent {label params['jenkinsNode']}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '2'))
+  }
+  parameters{
+          string(name: 'repoName',     defaultValue: 'changeme',            description: 'git repo name')
+          string(name: 'branch',       defaultValue: 'master',              description: 'Branch to extract')
+          string(name: 'prettyformat', defaultValue: '%ad,%ae,%H',          description: 'Format for the git log')
+          string(name: 'jenkinsNode',  defaultValue: 'rhel8',               description: 'Jenkins Slave to Run on')
+          string(name: 'sinceDate',    defaultValue: '2024-01-01',          description: 'Start Date of report')
+          string(name: 'mailto',       defaultValue: 'doronve@KUKU.com',  description: 'Mail to the report')
+  }
+  stages {
+    stage('Show PArameters') {
+      steps {
+        script {
+          sh '''
+             set +x
+             echo "repoName     = $repoName"
+             echo "branch       = $branch"
+             echo "prettyformat = $prettyformat"
+             echo "jenkinsNode  = $jenkinsNode "
+             echo "sinceDate    = $sinceDate   "
+             echo "mailto       = $mailto      "
+          '''
+        }
+      }
+    }
+    stage('Clone and Report') {
+      steps {
+        script {
+         wrap([$class: 'BuildUser']) {
+             env.uuuser = env.BUILD_USER_EMAIL
+          }
+          env.csvfile = sh(script:"mktemp /tmp/git_repo_XXX.csv",returnStdout: true)
+          sh '''
+             #env|sort
+             rm -rf   ${WORKSPACE}/REPO/
+             mkdir -p ${WORKSPACE}/REPO/
+             cd       ${WORKSPACE}/REPO/
+             git clone ssh://git@GITSERVER:7999/BDA/${repoName}.git
+             cd ${repoName}
+             echo "Date,User,Commit Hash" 2>&1 | tee -a ${csvfile}
+             git log --pretty=format:"%ad,%ae,%H" --date=short --reverse --all --since=${sinceDate} 2>&1 | tee -a ${csvfile}
+             echo Report of ${repoName} since ${sinceDate} | mailx -s "Report of ${repoName} since ${sinceDate} ${BUILD_URL}" -a ${csvfile} ${uuuser} ${mailto} doronve@KUKU.com
+          '''
+        }
+      }
+    }
+  }
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}

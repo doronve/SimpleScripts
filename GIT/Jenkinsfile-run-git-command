@@ -1,0 +1,110 @@
+#!/bin/env groovy
+def getBranch() {
+[ 'master','23.03','23.06.00','23.09.00','20.20.20','21.08.00','21.09','23.05.00','23.06','23.09','23.09.99','23.11.00','23.12.00','25.10.10','26.06.00','27.10.10','29.00.00']
+
+
+}
+pipeline {
+  agent {label params['jenkinsNode']}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '2'))
+  }
+  parameters{
+    booleanParam(name: 'runGitClone',  defaultValue: false,         description: 'Run the Git Clone Command.')
+          choice(name: 'allRepos',     choices: ['app','all','10'], description: 'How many repos to extract. all app or just 10 for testing')
+    booleanParam(name: 'runGitPull',   defaultValue: false,         description: 'Run the Git pull Command on existing repos.')
+    booleanParam(name: 'runCommand',   defaultValue: false,         description: 'Run the Command.')
+          //choice(name: 'branch',       choices: getBranch(),        description: 'Branch to extract')
+          string(name: 'branch',       defaultValue: 'master',      description: 'Branch to extract')
+          string(name: 'commandToRun', defaultValue: 'git status',  description: 'Command to run on all git repos')
+          string(name: 'jenkinsNode',  defaultValue: 'aidp-git',    description: 'Jenkins Slave to Run on')
+  }
+  stages {
+    stage('Show PArameters') {
+      steps {
+        script {
+          sh '''
+             set +x
+             echo "runGitClone  = $runGitClone "
+             echo "allRepos     = $allRepos    "
+             echo "runGitPull   = $runGitPull  "
+             echo "runCommand   = $runCommand  "
+             echo "branch'      = $branch      "
+             echo "commandToRun = $commandToRun"
+             echo "jenkinsNode  = $jenkinsNode "
+          '''
+        }
+      }
+    }
+    stage('Get Repos List') {
+      steps {
+        script {
+          sh '''
+             set +x
+             echo bash GIT/GIT_get_repos_list.sh -f full_repos_list.lst -a ${allRepos}
+             bash GIT/GIT_get_repos_list.sh -f full_repos_list.lst -a ${allRepos}
+          '''
+        }
+      }
+    }
+    stage('Clone Repos') {
+    when { expression { params.runGitClone == true } }  
+      steps {
+        script {
+          sh '''
+             set +x
+             rm -rf   /ALLREPOS/${branch}
+             mkdir -p /ALLREPOS/${branch}
+             echo bash GIT/GIT_run_git_clone_all.sh -d /ALLREPOS/${branch} -f $PWD/full_repos_list.lst -b ${branch}
+             bash GIT/GIT_run_git_clone_all.sh -d /ALLREPOS/${branch} -f $PWD/full_repos_list.lst -b ${branch}
+          '''
+        }
+      }
+    }
+    stage('Pull Repos') {
+    when { expression { params.runGitPull == true } }  
+      steps {
+        script {
+          sh '''
+             set +x
+             echo bash GIT/GIT_run_git_pull_all.sh -d /ALLREPOS/${branch}
+             bash GIT/GIT_run_git_pull_all.sh -d /ALLREPOS/${branch}
+          '''
+        }
+      }
+    }
+    stage('RunCommand') {
+    when { expression { params.runCommand == true } }
+      steps {
+        sh '''
+          set +x
+          rm -rf RUNCMD
+          mkdir  RUNCMD
+          cmdFile=${PWD}/RUNCMD/commandToRun.sh
+          echo "cmdFile = ${cmdFile}"
+          rm -f ${cmdFile}
+          touch ${cmdFile}
+          echo "#!/bin/bash"   >> ${cmdFile}
+          echo "$commandToRun" >> ${cmdFile}
+          echo 'echo status = $?'  >> ${cmdFile}
+          for gitdir in $(ls -d /ALLREPOS/${branch}/*/.git)
+          do
+            dir=$(echo $gitdir | sed 's/.git$//')
+            cd ${dir}
+            pwd
+            bash -x ${cmdFile}
+          done
+        '''
+      }
+    }
+  }
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}

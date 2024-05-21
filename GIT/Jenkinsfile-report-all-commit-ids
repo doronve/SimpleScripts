@@ -1,0 +1,82 @@
+#!/bin/env groovy
+pipeline {
+  agent {label params['jenkinsNode']}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '2'))
+  }
+  parameters{
+          string(name: 'branch',       defaultValue: 'master',                 description: 'Branch to extract')
+          string(name: 'jenkinsNode',  defaultValue: 'rhel8',                  description: 'Jenkins Slave to Run on')
+          choice(name: 'clone', choices: ['false','true'],                     description: 'Running git clone')
+          string(name: 'daysBackward', defaultValue: '1',                      description: 'How many days backward')
+          string(name: 'mailto',       defaultValue: 'DIdevops@KUKU.com',    description: 'Mail to the report')
+          string(name: 'GIT_REPO_PATH_LOCATION',       defaultValue: '/BD/GIT-MASTER',    description: 'GIT Repo Path Location')
+          //string(name: 'prettyformat', defaultValue: '%ad,%ae,%H',           description: 'Format for the git log')
+          //string(name: 'sinceDate',    defaultValue: '2024-05-17',           description: 'Start Date of report')
+  }
+  stages {
+    stage('Show Parameters') {
+      steps {
+        script {
+          sh '''
+             set +x
+             echo "branch                  = $branch"
+             echo "jenkinsNode             = $jenkinsNode"
+             echo "daysBackward            = $daysBackward"
+             echo "mailto                  = $mailto"
+             echo "GIT_REPO_PATH_LOCATION  = $GIT_REPO_PATH_LOCATION"
+          '''
+        }
+      }
+    }
+
+    stage('Clone local GIT repo') {
+      when { expression { params.clone == "true" } }
+      steps {
+        script {
+          sh '''
+          rm -rf ${GIT_REPO_PATH_LOCATION}/${branch}/*
+          bash ${WORKSPACE}/GIT/GIT_run_git_clone_all.sh -d ${GIT_REPO_PATH_LOCATION}/${branch} -f "${WORKSPACE}/projects_list_master.txt -b ${branch} "
+          rm -f ${GIT_REPO_PATH_LOCATION}/${branch}/*.log
+          '''
+        }
+      }
+    }
+
+    stage('Pull local GIT repo') {
+      steps {
+        script {
+         wrap([$class: 'BuildUser']) {
+             env.uuuser = env.BUILD_USER_EMAIL
+          }
+          env.csvfile = sh(script:"mktemp /tmp/git_repo_XXX.csv",returnStdout: true)
+          sh '''
+          bash ${WORKSPACE}/GIT/GIT_local_pull_all.sh ${GIT_REPO_PATH_LOCATION}/${branch}
+          '''
+        }
+      }
+    }
+
+    stage('Create and send Report') {
+      steps {
+        script {
+          sh '''
+          sinceDate=$(date --date="${daysBackward} days ago" +%Y-%m-%d)
+          echo "getting all the commit since ${sinceDate}"
+          bash ${WORKSPACE}/GIT/getCmmitIds.sh "${WORKSPACE}/projects_list_master.txt" "${sinceDate}" "${GIT_REPO_PATH_LOCATION}/${branch}"
+          '''
+        }
+      }
+    }
+
+  }
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}
