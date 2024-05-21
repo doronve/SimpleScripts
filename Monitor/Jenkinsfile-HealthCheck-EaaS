@@ -1,0 +1,441 @@
+#!/usr/bin/env groovy
+import groovy.io.FileType
+import groovy.time.*
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+
+/**
+OC_HealthCheck
+Author: Tomer Simantov
+Modified: Doron Veeder
+https://JENKINSSERVER:18081/view/z-DevOps%20Utilities/job/AIDP-EaaS-Health-Check/
+ORIG - http://OTHERJENKINS:18080/view/oc-self-services/job/OC_HealthCheck/
+**/
+
+// Job desc. template
+job_desc = '''
+<p style="color: blue;font-size: 20px;">
+<b>Contact <a href="https://teams.microsoft.com/l/chat/0/0?users=Doron.Veeder@KUKU.com">Doron Veeder</a> for any inquiries.</b>
+</p>
+<div style="background-color:#f5f5f5; box-shadow: inset 0px 0px 8px 0px;text-align: center; width: 1000px; color: black; padding: 10px; padding-top: 0px; padding-bottom: 0px; border-radius: 18px; display: inline-block;">
+<p>
+<span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 1px 3px red;">
+<strong>
+<span style="font-size:72px;">DataOne Health Checker</span>
+</strong>
+</span>
+</p>
+<hr style="height:2px; width:100%; border-width:0; color:darkgray; border-color: darkgray; background-color:darkgray">
+
+<!--VMS-SECTION-->
+<p>
+<span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 0 1px #FF0000;">
+<strong>
+<span style="font-size:48px;">Jenkins Slaves</span>
+</strong>
+</span>
+</p>
+  <table style="text-style: bold; width: 95%;line-height:1;margin-left:30px;border-collapse: collapse;border-spacing: 0;">
+    <tr style="background-color:#e4e4e4;">
+      <th>Name</th>
+      <th style="width:20%">IP</th>
+      <th>Status</th>
+      <th style="width:20%">Capacity</th>
+      <th>Last Update</th>
+    </tr>
+<tr>
+<td>
+<br>
+</td>
+<!--VM-->X<!--VM-END-->
+  </table>
+<!--VMS-SECTION-END-->
+<!--VAPP1S-SECTION-->
+<p>
+<span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 0 1px #FF0000;">
+<strong>
+<span style="font-size:48px;">Other VMs</span>
+</strong>
+</span>
+</p>
+  <table style="text-style: bold; width: 95%;line-height:1;margin-left:30px;border-collapse: collapse;border-spacing: 0;">
+    <tr style="background-color:#e4e4e4;">
+      <th>Name</th>
+      <th style="width:20%">IP</th>
+      <th>Status</th>
+      <th style="width:20%">Capacity</th>
+      <th>Last Update</th>
+    </tr>
+<tr>
+<td>
+<br>
+</td>
+<!--VAPP1-->X<!--VAPP1-END-->
+  </table>
+<!--VAPP1S-SECTION-END-->
+<br>
+</div>
+'''
+
+status = [
+  V: "&#10004;", // Online (V)
+  X: "&#x274C;", // Offline (X)
+  U: "&#x1F535;", // Used (Blue)
+  A: "&#128994;", // Available (Green)
+  P: "&#x1F534;", // Pending or Untainted (Red)
+]
+
+print = [
+  LN: "\n\n",
+  BREAK: "="*80,
+  LNBREAK: "="*80 + "\n\n",
+  SPACING: '&nbsp;',
+  XOUT: "#!/bin/sh -e\n"
+]
+
+THRESHOLD_MAP = [
+                 vm_threshold:params.vm_threshold,
+                 vapp1_threshold:params.vapp1_threshold
+]
+//change above
+
+FAILURES_MAP = [timestamp: null,
+                type: null,
+                title: '',
+                message: '',
+                notify: null
+]
+
+STATUS_COLOR = [GREEN: "darkgreen",
+                ORANGE: "darkorange",
+                RED: "red"
+]
+
+DESC_MAP = [
+            VMS: '',
+            VAPP1S: ''
+]
+
+STATUS_MAP = [:]
+VM_MAP = [:]
+VAPP1_MAP = [:]
+MAP_OF_CLUSTERS = [:]
+cls_num_list = []
+livestatus_img_list = []
+list_of_jenkins = ''
+build_num = (env.BUILD_NUMBER)
+mail_message = ''
+
+timestamps {
+    properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false],
+        parameters([
+            string(name: 'vm_threshold',     defaultValue:'90',                  description: 'vapp       ', trim: true),
+            string(name: 'vapp1_threshold',  defaultValue:'90',                  description: 'vapp1      ', trim: true),
+            string(name: 'mailto',           defaultValue:'doronve@KUKU.com',  description: 'sendmail   ', trim: true),
+       ])
+    ])
+
+ //triggers { cron('10 * * * *') }
+ timeout(time: 7, unit: 'MINUTES') {
+  //node((build_num %2 == 0) ? 'HealthChecker' : 'HealthChecker2')
+  node("pmx")
+  {
+    echo 'deleteDir()'
+    deleteDir()
+    echo 'checkout scm'
+    checkout scm
+
+    stage("HealthCheck")
+    {
+      parallel(
+        vms: {
+          echo 'vms()'
+          vms()
+        },
+        vApp1s: {
+          echo 'vApp1s()'
+          vApp1s()
+        }
+      )
+    }
+    stage("LiveStatus & Publishing") {
+      parallel (
+        liveStatus: {
+          echo 'liveStatus()'
+          liveStatus()
+        },
+        description: {
+          job_desc = job_desc.replaceFirst("<!--VM-->(.*)<!--VM-END-->", "<!--VM-->${DESC_MAP.VMS}<!--VM-END-->")
+          job_desc = job_desc.replaceFirst("<!--VAPP1-->(.*)<!--VAPP1-END-->", "<!--VAPP1-->${DESC_MAP.VAPP1S}<!--VAPP1-END-->")
+          def Location = ''
+          Location=check_location().toString()
+          job_desc = job_desc.replaceFirst("Jenkins Slaves", "${Location} VMs")
+          currentBuild.rawBuild.project.description = job_desc
+        }
+      )
+    }
+
+    if (mail_message) {
+      echo 'send_mail(mail_message)'
+      send_mail(mail_message)
+    }
+  }
+ }
+}
+
+
+
+def add_status(def kind, def name, def status, def message) {
+echo "start add_status"
+  STATUS_MAP["(${kind}): ${name}"] = [kind: kind,
+                                      name: name,
+                                      status: status,
+                                      message: message
+                                     ]
+echo "end add_status"
+}
+
+// Currently not in use
+def jenkins(String instance) {
+echo "start jenkins"
+
+  resp_int = 0
+  def up = ''
+  try {
+    println "Checking if Jenkins ${instance} is UP."
+    up = sh(script:"set +x;curl -Is ${instance}", returnStdout: true)
+  }
+  catch(Exception e) {
+    jenkins_desc_list += "<tr style=\"background-color:#ffe1e1\"><td><b>${instance}</b></td><td>${status.X}</td><td></td></tr>"
+    jenkinsList += "${instance},Down\n"
+    addErrorBadge("[Failure] Jenkins " + instance + " is unavailable.")
+    println "jenkins function: ${e}"
+  }
+  if (up.contains("200 OK")) {
+    timeout(time: 30, unit: 'SECONDS') {
+    response = sh(script:"set +x;curl -s -o /dev/null -w '%{time_total}\n' -H 'Pragma: no-cache' ${instance}", returnStdout: true).toString().trim()
+    if (response) {
+      response = Double.parseDouble(response)
+      jenkins_desc_list += "<tr><td><b>${instance}</b></td><td>${status.V}</td><td><b>${(response*1000)}</b>ms</td></tr>"
+      jenkinsList += "${instance},Up\n"
+    } else {
+      jenkins_desc_list += "<tr style=\"background-color:#ffe1e1\"><td><b>${instance}</b></td><td>${status.X}</td><td></td></tr>"
+      jenkinsList += "${instance},Down\n"
+      addErrorBadge("[Failure] Jenkins " + instance + " is unavailable.")
+    }
+    }
+  }
+echo "end jenkins"
+}
+
+def vms() {
+echo "start vms"
+
+  sh "${print.XOUT}chown \$USER ~/.ssh/config; chmod 600 ~/.ssh/config; echo \"StrictHostKeyChecking no\" > ~/.ssh/config"
+  def Location = ''
+  Location=check_location().toString()
+  echo "Location =  ${Location}"
+  echo "${WORKSPACE}/Monitor/VM_List_${Location}.lst"
+  vms_List_path = "${WORKSPACE}/Monitor/VM_List_${Location}.lst"
+
+  if (fileExists(vms_List_path)) {
+    vms_List = (readFile(vms_List_path)).replaceAll("[\\t ]", "")
+    vms_List = (vms_List.readLines()).sort().each { vm ->
+      vm = vm.tokenize('|')
+      VM_MAP[vm[1]] = [name: vm[0], data: '', status: null, capacity: '', ip: vm[1], username: vm[2], password: vm[3], description: vm[4]]
+    }
+    VM_MAP.each {
+      try {
+        echo "it.value.ip = ${it.value.ip}"
+        it.value.data = sh(script:"${print.XOUT}sshpass -p ${it.value.password} ssh -tt ${it.value.username}@${it.value.ip} \
+                               \"echo \$(date '+%d/%m/%Y %H:%M:%S'); \
+                               df -h; \
+                               exit\"", returnStdout: true)
+        if (it.value.data) it.value.status = true
+      } catch(Exception e) {
+        add_status('vm', it.value.name, false, "Login failed")
+        println "vms_function: ${e}"
+        it.value.status = false
+      }
+      if (it.value.status) {
+        lastUpdate = it.value.data.split("\n")[0]
+        println "vms DEBUG lastUpdate: $lastUpdate"
+        println "vms DEBUG it.value.ip: ${it.value.ip}"
+        println "vms DEBUG it.value.data: ${it.value.data}"
+
+        filter = sh (script: "${print.XOUT}echo '${it.value.data}'| grep /dev/mapper | grep -E '/var|/usr|/opt|/tmp|/docker|/users|-root'| awk '{print \$5, \$6}' | column -t ", returnStdout: true).toString()
+        add_status('vm', it.value.name, true, null)
+
+        if (filter && lastUpdate) {
+
+          filter = filter.readLines().each { entry ->
+
+            def percentage = entry.split("\\s+")[0].replaceAll("%","").trim()
+            it.value.capacity += "<b style=\"color:${(percentage > THRESHOLD_MAP.vm_threshold) ? STATUS_COLOR.RED : STATUS_COLOR.GREEN}\">${percentage}%</b>${print.SPACING*3}${entry.split("\\s+")[1]}<br>"
+            if (percentage > THRESHOLD_MAP.vm_threshold) {
+              mail_message += "[Alert] vm ${it.value.name} has a high capacity (${percentage}%) under path ${entry.split("\\s+")[1]}<br>"
+            }
+          }
+        }
+        DESC_MAP.VMS += "<tr><td><b>${it.value.name}<br><br></b></td><td>${it.key}</td><td>${status.V}</td><td style=\"text-align:left;\">${it.value.capacity}<br></td><td>${lastUpdate.trim()}</td></tr>"
+      }
+      else {
+        addErrorBadge("[Failure] vm ${it.value.name} is unavailable.")
+        add_status('vm', it.value.name, false, "Login failed")
+        DESC_MAP.VMS += "<tr style=\"background-color:#ffe1e1\"><td><b>${it.value.name}<br><br></b></td>\
+                           <td>${it.value.ip}</td><td>${status.X}</td>\
+                           <td style=\"text-align:left;\"></td><td></td></tr>"
+      }
+    }
+  } else {
+    error("vms file does not exist.")
+  }
+echo "end vms"
+}
+def vApp1s() {
+echo "start vApp1s"
+
+  sh "${print.XOUT}chown \$USER ~/.ssh/config; chmod 600 ~/.ssh/config; echo \"StrictHostKeyChecking no\" > ~/.ssh/config"
+  def Location = ''
+  Location=check_location().toString()
+  echo "Location =  ${Location}"
+  echo "${WORKSPACE}/Monitor/VM_List1_${Location}.lst"
+  vApp1s_List_path = "${WORKSPACE}/Monitor/VM_List1_${Location}.lst"
+
+  if (fileExists(vApp1s_List_path)) {
+    vApp1s_List = (readFile(vApp1s_List_path)).replaceAll("[\\t ]", "")
+    vApp1s_List = (vApp1s_List.readLines()).sort().each { vApp1 ->
+      vApp1 = vApp1.tokenize('|')
+      VAPP1_MAP[vApp1[1]] = [name: vApp1[0], data: '', status: null, capacity: '', ip: vApp1[1], username: vApp1[2], password: vApp1[3]]
+    }
+    VAPP1_MAP.each {
+      try {
+        it.value.data = sh(script:"${print.XOUT}sshpass -p ${it.value.password} ssh -tt ${it.value.username}@${it.value.ip} \
+                               \"echo \$(date '+%d/%m/%Y %H:%M:%S'); \
+                               df -h; \
+                               exit\"", returnStdout: true)
+        if (it.value.data) it.value.status = true
+      } catch(Exception e) {
+        add_status('vApp1', it.value.name, false, "Login failed")
+        println "vApp1s_function: ${e}"
+        it.value.status = false
+      }
+      if (it.value.status) {
+        lastUpdate = it.value.data.split("\n")[0]
+        println "vApp1s DEBUG lastUpdate: $lastUpdate"
+        println "vApp1s DEBUG it.value.ip: ${it.value.ip}"
+        println "vApp1s DEBUG it.value.data: ${it.value.data}"
+
+        filter = sh (script: "${print.XOUT}echo '${it.value.data}'| grep /dev/mapper | grep -E '/var|/usr|/opt|/var/lib/scylla|/|/tmp|/docker|/users|-root'| awk '{print \$5, \$6}' | column -t ", returnStdout: true).toString()
+        add_status('vApp1', it.value.name, true, null)
+
+        if (filter && lastUpdate) {
+
+          filter = filter.readLines().each { entry ->
+
+            def percentage = entry.split("\\s+")[0].replaceAll("%","").trim()
+            it.value.capacity += "<b style=\"color:${(percentage > THRESHOLD_MAP.vapp1_threshold) ? STATUS_COLOR.RED : STATUS_COLOR.GREEN}\">${percentage}%</b>${print.SPACING*3}${entry.split("\\s+")[1]}<br>"
+            if (percentage > THRESHOLD_MAP.vapp1_threshold) {
+              mail_message += "[Alert] vApp1 ${it.value.name} has a high capacity (${percentage}%) under path ${entry.split("\\s+")[1]}<br>"
+
+            }
+          }
+        }
+        DESC_MAP.VAPP1S += "<tr><td><b>${it.value.name}<br><br></b></td><td>${it.key}</td><td>${status.V}</td><td style=\"text-align:left;\">${it.value.capacity}<br></td><td>${lastUpdate.trim()}</td></tr>"
+      }
+      else {
+        addErrorBadge("[Failure] vApp1 ${it.value.name} is unavailable.")
+        add_status('vApp1', it.value.name, false, "Login failed")
+        DESC_MAP.VAPP1S += "<tr style=\"background-color:#ffe1e1\"><td><b>${it.value.name}<br><br></b></td>\
+                           <td>${it.value.ip}</td><td>${status.X}</td>\
+                           <td style=\"text-align:left;\"></td><td></td></tr>"
+      }
+    }
+  } else {
+    error("vApp1s file does not exist.")
+  }
+echo "end vApp1s"
+}
+
+
+
+def liveStatus() {
+echo "start liveStatus"
+
+  livestatus_img_list.unique().each { env ->
+    env = env.split(',')
+    sh "${print.XOUT}cp Monitor/img/${env[1]}.png Monitor/img/${env[0]}.png;cp Monitor/img/${env[2]}v2.png Monitor/img/${env[0]}-v2.png;"
+  }
+
+  parallel (
+    img_phase: { archiveArtifacts artifacts: "Monitor/img/**" },
+    logs_phase: { archiveArtifacts artifacts: "Monitor/logs/**" }
+  )
+echo "end liveStatus"
+}
+
+def append_to_file(content, path) {
+echo "start append_to_file"
+  sh(script:"#!/bin/sh -e\necho \"${content}\" >> \"${path}\"")
+echo "end append_to_file"
+}
+
+def send_mail(message) {
+echo "start send_mail"
+  mail_body =
+  """
+  ${message}
+  https://JENKINSSERVER:18081/view/z-DevOps%20Utilities/job/AIDP-EaaS-Health-Check/
+  """
+
+        emailext (to: 'doronve@KUKU.com',
+            subject: "DataOne_EaaS_HealthCheck - Alert",
+            body: mail_body,
+            mimeType: 'text/html')
+
+//  mail bcc: '',
+//       body: mail_body,
+//       cc: 'doronve@KUKU.com',
+//       from: '',
+//       replyTo: '',
+//       subject: "DataOne_EaaS_HealthCheck - Alert",
+//       to: 'doronve@KUKU.com'
+echo "end send_mail"
+}
+
+def print_map(map) {
+echo "start print_map"
+  for (entry in map.entrySet()) {
+    println("Key: ${entry.key} - Value: ${entry.value}")
+  }
+echo "end print_map"
+}
+
+def map_to_json(map) {
+echo "start map_to_json"
+  return JsonOutput.toJson(map)
+echo "end map_to_json"
+}
+
+def json_to_map(json) {
+echo "start map_to_json"
+  return new JsonSlurper().parseText(json)
+}
+
+def check_location() {
+echo "start check_location"
+  def vm_ip = ''
+  vm_ip = sh(script:"bash ${WORKSPACE}/Monitor/get_short_ip.sh", returnStdout: true).toString().trim()
+  echo "vm_ip = ${vm_ip}"
+  vm_ip = sh(script:"bash ${WORKSPACE}/Monitor/get_short_ip.sh", returnStdout: true)
+  echo "vm_ip = ${vm_ip}"
+  location="on-prem"
+  if (vm_ip.contains("xxx.yyy.110")) { location="bss-nft" }
+  if (vm_ip.contains("xxx.yyy.34") ) { location="ACCOUNT" }
+  if (vm_ip.contains("xxx.yyy.178")) { location="dataone-ae-54776281" }
+  if (vm_ip.contains("xxx.yyy.0")  ) { location="ACCOUNT2" }
+  if (vm_ip.contains("xxx.yyy.218")) { location="dataone-dr" }
+  return location
+}
+

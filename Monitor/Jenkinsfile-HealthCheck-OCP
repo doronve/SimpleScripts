@@ -1,0 +1,868 @@
+#!/usr/bin/env groovy
+import groovy.io.FileType
+import groovy.time.*
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+
+/**
+OC_HealthCheck
+Author: Tomer Simantov
+Modified: Doron Veeder
+https://JENKINSSERVER:18081/view/z-DevOps%20Utilities/job/AIDP-OCP-Health-Check/
+ORIG - http://OTHERJENKINS:18080/view/oc-self-services/job/OC_HealthCheck/
+**/
+
+// Job desc. template
+job_desc = '''
+<p style="color: blue;font-size: 20px;"><b>Contact <a href="https://teams.microsoft.com/l/chat/0/0?users=Doron.Veeder@KUKU.com">Doron Veeder</a> for any inquiries.</b></p>
+<div style="background-color:#f5f5f5; box-shadow: inset 0px 0px 8px 0px;text-align: center; width: 1000px; color: black; padding: 10px; padding-top: 0px; padding-bottom: 0px; border-radius: 18px; display: inline-block;">
+<p><span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 1px 3px red;"><strong><span style="font-size:72px;">DataOne Health Checker</span></strong></span></p>
+<p style="color: blue;font-size: 20px;"><b><a href="https://GITSERVER/projects/BDA/repos/aia-maintenance/browse/Monitor/Jenkinsfile-HealthCheck-OCP">Jenkinsfile</a> of this job</b></p>
+<hr style="height:2px; width:100%; border-width:0; color:darkgray; border-color: darkgray; background-color:darkgray">
+<!--OPENSHIFT-SECTION-->
+  <br>
+<p><span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 0 1px #FF0000;"><strong><span style="font-size:48px;">OCP Clusters</span></strong></span></p>
+  <table style="text-style: bold; width: 95%;line-height:1;margin-left:25px;border-collapse: collapse;border-spacing: 0;">
+    <tr style="background-color:#e4e4e4;">
+      <th style="width: 10%">Cluster<br><span style="font-size:10px;">&nbsp;</span></th>
+      <th style="width: 10%">Status<br><span style="font-size:10px;">NTNET</span></th>
+      <th style="width: 10%">Quota<br><span style="font-size:10px;">&nbsp;</span></th>
+      <th style="text-align: left; padding-left: 10px">Tainted Workers&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NS Health<br><span style="font-size:10px;">&#x1F535;USED | &#128994;AVAILABLE | &#x1F534;PENDING/UNTAINTED</span></th>
+    </tr>
+    <tr><td><br></td><!--OCP-->X<!--OCP-END-->
+
+<br><hr style="height:2px; width:100%; border-width:0; color:darkgray; border-color: darkgray; background-color:darkgray">
+
+<!--NODES-SECTION-->
+<p><span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 0 1px #FF0000;"><strong><span style="font-size:48px;">OCP Workers</span></strong></span></p>
+    <table style="font-weight:500;text-style: bold; width: 95%;line-height:1.6;margin-left:25px;border-collapse: collapse;border-spacing: 0;">
+    <tr style="background-color:#e4e4e4;">
+      <th>BU</th>
+      <th>Alias</th>
+      <th>Node</th>
+      <th>CPU%</th>
+      <th>RAM%</th>
+      <th>Snaptime</th>
+    </tr>
+  <tr><td></td></tr><!--NODES-->X<!--NODES-END-->
+  </table>
+<!--NODES-SECTION-END-->
+
+<br><hr style="height:2px; width:100%; border-width:0; color:darkgray; border-color: darkgray; background-color:darkgray">
+
+<!--PVC-SECTION-->
+<p><span style="font-family:trebuchet ms,helvetica,sans-serif;text-shadow: 0 0 1px #FF0000;"><strong><span style="font-size:48px;">OCP PVC</span></strong></span></p>
+    <table style="font-weight:500;text-style: bold; width: 95%;line-height:1.6;margin-left:25px;border-collapse: collapse;border-spacing: 0;">
+    <tr style="background-color:#e4e4e4;">
+      <th>Cluster</th>
+      <th>Namespace</th>
+      <th>PCT%</th>
+      <th>Name</th>
+      <th>Snaptime</th>
+    </tr>
+  <tr><td></td></tr><!--PVC-->X<!--PVC-END-->
+  </table>
+<!--PVC-SECTION-END-->
+
+<br><hr style="height:2px; width:100%; border-width:0; color:darkgray; border-color: darkgray; background-color:darkgray">
+  </table>
+<br>
+</div>
+'''
+
+
+
+
+status = [
+  V: "&#10004;", // Online (V)
+  X: "&#x274C;", // Offline (X)
+  U: "&#x1F535;", // Used (Blue)
+  A: "&#128994;", // Available (Green)
+  P: "&#x1F534;", // Pending or Untainted (Red)
+]
+
+users = [
+  NTNET: [type:'NTNET', id: params.NTNET_USER_ID]
+]
+
+print = [
+  LN: "\n\n",
+  BREAK: "="*80,
+  LNBREAK: "="*80 + "\n\n",
+  SPACING: '&nbsp;',
+  XOUT: "#!/bin/sh -e\n"
+]
+
+THRESHOLD_MAP = [cpu_thre_red: params.cpu_threshold_red.toInteger(),
+                 cpu_thre_orange: params.cpu_threshold_orange.toInteger(),
+                 ram_thre_red: params.ram_threshold_red.toInteger(),
+                 ram_thre_orange: params.ram_threshold_orange.toInteger(),
+                 cbfs_threshold:params.cbfs_threshold.toInteger(),
+                 pvc_threshold:params.pvc_threshold.toInteger()
+]
+
+FAILURES_MAP = [timestamp: null,
+                type: null,
+                title: '',
+                message: '',
+                notify: null
+]
+
+STATUS_COLOR = [GREEN: "darkgreen",
+                ORANGE: "darkorange",
+                RED: "red"
+]
+
+DESC_MAP = [OCP: '',
+            WORKERS: '',
+            PVC: ''
+]
+
+STATUS_MAP = [:]
+MAP_OF_CLUSTERS = [:]
+QUOTA_MAP = [:]
+cls_num_list = []
+livestatus_img_list = []
+list_of_jenkins = ''
+//OCP = (OCP_List.readLines()).sort().each { cls_num_list.add(it.replace('ilocpdo','ISR_DO_')) }
+OCP = params.OCP_List.split(",")
+print "OCP = " + OCP
+build_num = (env.BUILD_NUMBER).toInteger()
+mail_message = ''
+ocpList = "Cluster Name,Login NTNET,Node Name,Node Status,Namespace\n"
+
+timestamps {
+    properties([[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false],
+        parameters([
+            string(name: 'BITBUCKET_CRED_ID',    defaultValue:'BITBUCKET_JENKINS_BUILD', description: 'Credentials', trim: true),
+            string(name: 'OCP_List',             defaultValue:'ilocpat402,ilocpdo401,ilocpdo402,ilocpdo403,ilocpdo404,ilocpdo408,ilocpdodev403,ilocpdonft403,ilocppnts403,ilocppntsnft402,inocpaia402,inocpaianft401,inocpdo401,inocpdo402,inocpdodev401,inocpdodev402,inocpdodev403',  description: 'OCP List   ', trim: true),
+            string(name: 'cpu_threshold_red',    defaultValue:'80',                      description: 'cpu red    ', trim: true),
+            string(name: 'cpu_threshold_orange', defaultValue:'80',                      description: 'cpu orange ', trim: true),
+            string(name: 'ram_threshold_red',    defaultValue:'80',                      description: 'ram red    ', trim: true),
+            string(name: 'ram_threshold_orange', defaultValue:'80',                      description: 'ram orange ', trim: true),
+            string(name: 'cbfs_threshold',       defaultValue:'80',                      description: 'cbfs       ', trim: true),
+            string(name: 'pvc_threshold',        defaultValue:'80',                      description: 'pvc        ', trim: true),
+            string(name: 'NTNET_USER_ID',        defaultValue:'doronve',                 description: 'user       ', trim: true)
+       ])
+    ])
+
+ timeout(time: 7, unit: 'MINUTES') {
+  //node((build_num %2 == 0) ? 'HealthChecker' : 'HealthChecker2')
+  node("pmx")
+  {
+    echo 'deleteDir()'
+    deleteDir()
+    echo 'checkout scm'
+    checkout scm
+
+    stage("HealthCheck")
+    {
+      parallel(
+        ocp_clusters: {
+          echo 'ocpPVC()'
+          ocpPVC()
+          OCP.each {
+            cluster -> ocp(cluster)
+          }
+          echo "ocp_duration_list()"
+          ocp_duration_list()
+        },
+        nodes: {
+          echo 'ocpNodes()'
+          ocpNodes()
+        }
+      )
+    }
+    stage("LiveStatus & Publishing") {
+      parallel (
+        liveStatus: {
+          echo 'liveStatus()'
+          liveStatus()
+        },
+        description: {
+          job_desc = job_desc.replaceFirst("<!--NODES-->(.*)<!--NODES-END-->", "<!--NODES-->${DESC_MAP.WORKERS}<!--NODES-END-->")
+          job_desc = job_desc.replaceFirst("<!--PVC-->(.*)<!--PVC-END-->", "<!--PVC-->${DESC_MAP.PVC}<!--PVC-END-->")
+          job_desc = job_desc.replaceFirst("<!--OCP-->(.*)<!--OCP-END-->", "<!--OCP-->${DESC_MAP.OCP}<!--OCP-END-->")
+          currentBuild.rawBuild.project.description = job_desc
+        },
+        csvArtifacts: {
+          writeFile file: "${WORKSPACE}/csv/ocpOutput.csv", text: ocpList
+          archiveArtifacts artifacts: "csv/ocpOutput.csv"
+        },
+        events: {
+          writeFile file: "${WORKSPACE}/monitor/events.json", text: map_to_json(STATUS_MAP)
+          archiveArtifacts artifacts: "monitor/events.json"
+          echo 'events()'
+          events()
+        }
+      )
+    }
+
+    if (mail_message) {
+      echo 'send_mail(mail_message)'
+      send_mail(mail_message)
+    }
+  }
+ }
+}
+
+def add_status(def kind, def name, def status, def message) {
+echo "start add_status"
+  STATUS_MAP["(${kind}): ${name}"] = [kind: kind,
+                                      name: name,
+                                      status: status,
+                                      message: message
+                                     ]
+echo "end add_status"
+}
+
+def ocp_check_connectivity(def type, def id, def cluster) {
+echo "start ocp_check_connectivity"
+
+  withCredentials([usernamePassword(credentialsId: id,  passwordVariable: 'CRED_PASSWORD', usernameVariable: 'CRED_USERNAME')]) {
+
+    try {
+      println "Logging into OCP cluster '${cluster}' (${type})."
+      println "${print.XOUT}oc login api.${cluster}.ocpd.corp.KUKU.com:6443 -u ${CRED_USERNAME} -p ${CRED_PASSWORD} --insecure-skip-tls-verify"
+      sh(script:"${print.XOUT}oc login api.${cluster}.ocpd.corp.KUKU.com:6443 -u ${CRED_USERNAME} -p ${CRED_PASSWORD} --insecure-skip-tls-verify", returnStdout: true)
+
+      def CURRENT_USER_NAME = sh(script:"${print.XOUT}oc whoami", returnStdout: true).trim()
+
+      //if (CURRENT_USER_NAME == CRED_USERNAME) {
+        add_status('OCP Cluster', cluster, true, type)
+        println "DUBUG: ocp_check_connectivity [SUCCESS] OCP cluster ${cluster} is available (${type})"
+        return true
+      //} else {
+        //add_status('OCP Cluster', cluster, false, "Login failed (${type})")
+        //mail_message += "[Failure] OCP Cluster ${cluster} is down (${type})\n${e}\n"
+        //throw new Exception("Login failed")
+        //return false
+      //}
+
+    } catch(Exception e) {
+      println "DEBUG: fail ocp_check_connectivity e = " + e
+      add_status('OCP Cluster', cluster, false, "Login failed (${type})")
+      mail_message += "[Failure] OCP Cluster ${cluster} is down (${type})\n${e}\n"
+      println "DEBUG: ocp_check_connectivity [Failure] OCP Cluster ${cluster} is down (${type})\n${e}"
+      addErrorBadge("${cluster} is down (${type}).")
+      return false
+    }
+  }
+echo "end ocp_check_connectivity"
+      return true
+}
+
+def ocp(String cluster) {
+echo "start ocp cluster = " + cluster
+
+  CLUSTER_MAP = [NS_LIST: [:],
+                 ntnet_flag: ocp_check_connectivity(users.NTNET.type, "USER", cluster),
+                 tainted_nodes: '', unavailable_workers: [],
+                 worker_line: '', available_line: '',
+                 duration_total: 0.0, duration_avg: 0.0, NS_COUNT: 0
+                ]
+
+    println "DUBUG: ocp CLUSTER_MAP.ntnet_flag = ${CLUSTER_MAP.ntnet_flag}"
+    DESC_MAP.OCP += "<tr style=\"background-color:#ffbfbf\"><td><b>${cluster}</b></td><td>${(CLUSTER_MAP.ntnet_flag) ? status.V : status.X}\
+                    </td><td style=\"padding:0\"><table style=\"width:100%;line-height:1.25;text-align:left;border-spacing:0px;border-collapse:collapse;margin-bottom:8px\"></table></td></tr>"
+    ocpList += "${cluster},${(CLUSTER_MAP.ntnet_flag) ? "Pass" : "Failed"},NA,NA,NA\n"
+
+    parallel (
+      taint_phase: {
+          tainted_nodes = sh(script:"${print.XOUT}oc get nodes -l ms360-usage=backingservices |\
+                                     awk '{print \$1}' |\
+                                     awk 'NR>1' |\
+                                     cut -f1 -d'.'",returnStdout: true).trim()
+          tainted_nodes = tainted_nodes.readLines()
+      },
+      unavailable_phase: {
+          used_workers = sh(script:"${print.XOUT}oc get pods --all-namespaces -l couchbase_node -o wide|\
+                                   awk '{print \$1,\$8}' |\
+                                   sort -k 2 |\
+                                   cut -f1 -d'.' |\
+                                   awk 'NR>1'",returnStdout: true).trim()
+          used_workers = used_workers.readLines()
+      }
+    )
+
+   used_workers.each { element ->
+
+    // Initialization
+    element_split = element.split("\\s+")
+
+    NS_MAP = [namespace: element_split[0],
+             unavailable_worker: element_split[1],
+             at_least_one_failure: false,
+             pods_checker: '', si_checker: '', sb_checker: '', pvc_checker: '', cbfs_checker: '', idm_checker: '',
+             pods_flag: false, sis_flag: false, sis_flag: false, sbs_flag: false, pvcs_flag: false, cbfs_flag: false, idm_flag: false,
+             pods_checker_count: '', pvc_checker_count: '',
+             unavailable_worker_css: '', worker_status: '',
+             timeStart: null, timeStop: null, ns_duration: null
+    ]
+
+    liveStatus_log = "Namespace: ${NS_MAP.namespace} (${cluster})${print.LN}"
+    NS_MAP.timeStart = new Date()
+
+      parallel(
+
+        pods_phase: {
+
+          try {
+
+            NS_MAP.pods_checker = sh(script:"${print.XOUT}oc get pods -n ${NS_MAP.namespace}|\
+                                             grep -v Completed |\
+                                             awk '{split(\$2,arr,\"/\")} arr[2]>arr[1]'",returnStdout: true).trim()
+            NS_MAP.pods_checker_count = sh(script:"${print.XOUT}oc get pods -n ${NS_MAP.namespace}| wc -l",returnStdout: true).trim()
+
+            if (NS_MAP.pods_checker || NS_MAP.pods_checker_count == "0") {
+                liveStatus_log += "${print.LNBREAK}[Alert] Pods${print.LN}${NS_MAP.pods_checker}${print.LN}"
+                NS_MAP.at_least_one_failure = true
+            } else {
+                liveStatus_log += "${print.LNBREAK}Pods are OK. ${NS_MAP.pods_checker}${print.LN}"
+                NS_MAP.pods_flag = true
+            }
+          } catch(Exception e) {
+            println "pods_phase: ${e}"
+          }
+        },
+
+        jenkins_phase: {
+          try {
+              jenkins_json = sh(script:"${print.XOUT}oc -n ${NS_MAP.namespace} get \"\$(oc -n ${NS_MAP.namespace} get environment -o name)\" -o json | jq .spec.jobDetails.url,.spec.jobDetails.params.GIT_REPOSITORY,.spec.jobDetails.params.BRANCH_NAME,.spec.jobDetails.params.ENV_NAME",returnStdout: true).trim()
+              jenkins_json = jenkins_json.split("\n")
+              jenkins_url = jenkins_json[0].replaceAll("\"", "")
+              list_of_jenkins += "${NS_MAP.namespace}|${jenkins_url}|${jenkins_json[1].replaceAll("\"", "")}|${jenkins_json[2].replaceAll("\"", "")}|${jenkins_json[3].replaceAll("\"", "")}\n"
+          } catch(Exception e) {
+              println "jenkins_phase: ${e}"
+              jenkins_url = ''
+          }
+        },
+
+        si_phase: {
+          try {
+            NS_MAP.si_checker = sh(script:"${print.XOUT}oc get serviceinstances -n ${NS_MAP.namespace}| grep -vw ' Ready' | awk 'NR>1'",returnStdout: true).trim()
+
+            if (NS_MAP.si_checker) {
+                liveStatus_log += "${print.LNBREAK}[Alert] ServiceInstances${print.LN}${NS_MAP.si_checker}${print.LN}"
+                NS_MAP.at_least_one_failure = true
+            } else {
+                liveStatus_log += "${print.LNBREAK}ServiceInstances are OK. ${NS_MAP.si_checker}${print.LN}"
+                NS_MAP.sis_flag = true
+            }
+          } catch(Exception e) {
+            println "si_phase: ${e}"
+          }
+        },
+
+        sb_phase: {
+          try {
+            NS_MAP.sb_checker = sh(script:"${print.XOUT}oc get servicebindings -n ${NS_MAP.namespace}| grep -vw ' Ready' | awk 'NR>1'",returnStdout: true).trim()
+            if (NS_MAP.sb_checker) {
+              liveStatus_log += "${print.LNBREAK}[Alert] ServiceBindings${print.LN}${NS_MAP.sb_checker}${print.LN}"
+              NS_MAP.at_least_one_failure = true
+            } else {
+              liveStatus_log += "${print.LNBREAK}ServiceBindings are OK. ${NS_MAP.sb_checker}${print.LN}"
+              NS_MAP.sbs_flag = true
+            }
+          } catch(Exception e) {
+            println "sb_phase: ${e}"
+          }
+        },
+
+        pvc_phase: {
+          try {
+            NS_MAP.pvc_checker = sh(script:"${print.XOUT}oc get pvc -n ${NS_MAP.namespace} | grep -vw 'Bound' | awk 'NR>1'",returnStdout: true).trim()
+            NS_MAP.pvc_checker_count = sh(script:"${print.XOUT}oc get pvc -n ${NS_MAP.namespace} | grep -vw 'Bound' | awk 'NR>1'",returnStdout: true).trim()
+
+            // pvc_namespaces_list is taken from ocpPVC function, which takes the list from ocpmon
+            if (NS_MAP.pvc_checker || NS_MAP.namespace in pvc_namespaces_list || NS_MAP.pvc_checker_count == "0") {
+
+              if (NS_MAP.namespace in pvc_namespaces_list) {
+                pvc_logs.each { pvc_data ->
+                  pvc_data = pvc_data.tokenize('|')
+                  if (NS_MAP.namespace == pvc_data[0]) NS_MAP.pvc_checker += "${pvc_data[1]}"
+                  }
+              }
+              liveStatus_log += "${print.LNBREAK}[Alert] PVC (PCT% or Unbound)${print.LN}${NS_MAP.pvc_checker}${print.LN}"
+              NS_MAP.at_least_one_failure = true
+
+            } else {
+                liveStatus_log += "${print.LNBREAK}PVCs are OK. ${NS_MAP.pvc_checker}${print.LN}"
+                NS_MAP.pvcs_flag = true
+            }
+          } catch(Exception e) {
+            println "pvc_phase: ${e}"
+          }
+        },
+
+        cbfs_phase: {
+          try {
+            NS_MAP.cbfs_checker = sh(script:"${print.XOUT}oc get pod -n ${NS_MAP.namespace} -l couchbase_node |\
+                                             awk '{print \$1}' |\
+                                             cut -c1- |\
+                                             grep -v NAME |\
+                                             xargs -I{} kubectl exec -n ${NS_MAP.namespace} -c couchbase-server {} -- df -l|\
+                                             awk '{print \$5}'|\
+                                             cut -f1 -d%|\
+                                             grep -v Use|\
+                                             sort -n -r",returnStdout: true).trim()
+            NS_MAP.cbfs_checker = (NS_MAP.cbfs_checker).readLines()
+            if (NS_MAP.cbfs_checker == null) {
+              liveStatus_log += "${print.LNBREAK}[Alert] CB is unavailable.${print.LN}"
+              NS_MAP.at_least_one_failure = true
+            }
+            else
+            {
+              highest = NS_MAP.cbfs_checker[0].toInteger()
+              if (highest > THRESHOLD_MAP.cbfs_threshold) {
+                list_fs = sh(script:"${print.XOUT}oc get pod -n ${NS_MAP.namespace} -l couchbase_node |  \
+                                     awk '{print \$1}' | \
+                                     cut -c1- | \
+                                     grep -v NAME | \
+                                     xargs -I{} kubectl exec -n ${NS_MAP.namespace} -c couchbase-server {} -- \
+                                     df -h",returnStdout: true)
+                liveStatus_log += "${print.LNBREAK}[Alert] CB-FS${print.LN}${list_fs}${print.LN}"
+                NS_MAP.at_least_one_failure = true
+              }
+              else
+              {
+                liveStatus_log += "${print.LNBREAK}CB-FS is OK.${print.LN}"
+                NS_MAP.cbfs_flag = true
+              }
+            }
+          } catch(Exception e) {
+            println "cbfs_phase: ${e}"
+          }
+        },
+
+        idm_phase: {
+          try {
+            NS_MAP.idm_checker = sh(script:"${print.XOUT}kubectl get KUKUidmroleses,KUKUidmusers,KUKUidmcredentials -n ${NS_MAP.namespace} -o json | \
+                                            jq  -r '.items[] | .kind + \" \" + .metadata.name + \" \" +  .status.state' | \
+                                            grep -v 'done' | column -t",returnStdout: true).trim()
+            NS_MAP.idm_checker_count = sh(script:"${print.XOUT}kubectl get KUKUidmroleses,KUKUidmusers,KUKUidmcredentials -n ${NS_MAP.namespace} | wc -l",returnStdout: true).trim()
+
+            if (NS_MAP.idm_checker || NS_MAP.idm_checker_count == "0") {
+              if (NS_MAP.idm_checker_count == "0") {
+                liveStatus_log += "${print.LNBREAK}[Alert] IDM - There are no roles, users, credentials.${print.LN}"
+                NS_MAP.at_least_one_failure = true
+              }
+              else {
+                liveStatus_log += "${print.LNBREAK}[Alert] IDM${print.LN}${NS_MAP.idm_checker}${print.LN}"
+                NS_MAP.at_least_one_failure = true
+              }
+            }
+            else {
+              liveStatus_log += "${print.LNBREAK}IDM is OK (roles, users, credentials).${print.LN}"
+              NS_MAP.idm_flag = true
+            }
+          } catch(Exception e) {
+            println "idm_phase: ${e}"
+          }
+        }
+      )
+
+      add_status('OCP Namespace', NS_MAP.namespace, true, null)
+      CLUSTER_MAP.NS_COUNT += 1
+      NS_MAP.timeStop = new Date()
+      TimeDuration duration = TimeCategory.minus(NS_MAP.timeStop, NS_MAP.timeStart)
+      println "(${cluster}) ${NS_MAP.namespace} duration: ${duration}"
+      NS_MAP.ns_duration = duration.toString()
+
+      if ((NS_MAP.ns_duration).contains("minutes")) {
+        addErrorBadge("${cluster} is taking too long.")
+        add_status('OCP Cluster', cluster, false, "Timeout")
+        return
+      }
+
+      def timeDiff = (duration.toString().replace(' seconds',''))
+      CLUSTER_MAP.duration_total += timeDiff.toDouble()
+      duration = null
+      livestatus_img_list.add("${NS_MAP.namespace}-${cluster},${(NS_MAP.pods_flag) ? '1' : '0'}${(NS_MAP.sis_flag) ? '1' : '0'}${(NS_MAP.sbs_flag) ? '1' : '0'},${(NS_MAP.cbfs_flag) ? '1' : '0'}${(NS_MAP.pvcs_flag) ? '1' : '0'}${(NS_MAP.idm_flag) ? '1' : '0'}")
+      liveStatus_log += "${print.LNBREAK}"
+      timeNow = String.format('%tF %<tH:%<tM', java.time.LocalDateTime.now())
+      liveStatus_log_Output = "${WORKSPACE}/logs/${NS_MAP.namespace}-${cluster}.html"
+      sh "${print.XOUT}echo \"Timestamp: ${timeNow}\n${liveStatus_log}\" > \"${liveStatus_log_Output}\""
+      marking = "<tr>"
+
+      if (NS_MAP.at_least_one_failure) {
+        ns_status_color = "red"
+        marking = "<tr style=\"background-color:#ffe1e1;\">"
+      } else {
+        ns_status_color = "blue"
+      }
+
+      logs = "${print.SPACING*4}<a style=\"color: blue;\" href=\"lastSuccessfulBuild/artifact/logs/${NS_MAP.namespace}-${cluster}.html/*view*/\">Logs</a>"
+
+      if (jenkins_url == null || jenkins_url == '') {
+        jenkins_url_html = ""
+      } else {
+        jenkins_url_html = "${print.SPACING*2}<a style=\"color: blue;\" href=\"${jenkins_url}\">Jenkins</a>"
+      }
+
+      ns_health = "<a style=\"color:${(NS_MAP.pods_flag) ? "darkgreen" : "red"};\">Pods</a> | \
+                   <a style=\"color:${(NS_MAP.sis_flag) ? "darkgreen" : "red"};\">SI</a> | \
+                   <a style=\"color:${(NS_MAP.sbs_flag) ? "darkgreen" : "red"};\">SB</a> | \
+                   <a style=\"color:${(NS_MAP.pvcs_flag) ? "darkgreen" : "red"};\">PVC</a> | \
+                   <a style=\"color:${(NS_MAP.cbfs_flag) ? "darkgreen" : "red"};\">CB-FS</a> | \
+                   <a style=\"color:${(NS_MAP.idm_flag) ? "darkgreen" : "red"};\">IDM</a>"
+      namespace_link = "https://console-openshift-console.apps.${cluster}.ocpd.corp.KUKU.com/k8s/ns/${NS_MAP.namespace}/pods"
+
+      // Pending worker
+      if (NS_MAP.unavailable_worker == "<none>") {
+        NS_MAP.unavailable_worker_css = "${marking}<td><b style=\"color:red\">${status.P}Pending: </b>\
+        <a style=\"color:${ns_status_color};font-weight:500\" href=\"${namespace_link}\">${NS_MAP.namespace}</a></td>\
+        <td style=\"font-weight: 500;\">${ns_health}${logs}${jenkins_url_html}</td></tr>"
+        NS_MAP.worker_status = "Pending"
+        add_status('OCP Namespace', "${NS_MAP.unavailable_worker}-${cluster}", false, NS_MAP.worker_status)
+      }
+
+      // Untainted worker
+      else if (!tainted_nodes.contains(NS_MAP.unavailable_worker)) {
+
+        NS_MAP.unavailable_worker_css = "${marking}<td><b style=\"color:red\">${status.P}${NS_MAP.unavailable_worker} Untainted: </b>\
+                                         <a style=\"color:${ns_status_color};font-weight:500\" href=\"${namespace_link}\">${NS_MAP.namespace}</a></b>\
+                                         </td><td style=\"font-weight: 500;\">${ns_health}${logs}${jenkins_url_html}</td></tr>"
+        NS_MAP.worker_status = "Untainted"
+        add_status('OCP Worker', "${NS_MAP.unavailable_worker}-${cluster}", false, NS_MAP.worker_status)
+      }
+
+      // Used worker
+      else {
+        NS_MAP.unavailable_worker_css = "${marking}<td style=\"width:50%\"><b style=\"color:darkblue\"> \
+        ${status.U}${NS_MAP.unavailable_worker}: </b><a style=\"color:${ns_status_color};font-weight:500\" href=\"${namespace_link}\">${NS_MAP.namespace}</a></td><td style=\"font-weight: 500;\">${ns_health}${logs}${jenkins_url_html}</td></tr>"
+        NS_MAP.worker_status = "Used"
+        add_status('OCP Worker', NS_MAP.unavailable_worker, true, NS_MAP.worker_status)
+        CLUSTER_MAP.unavailable_workers.add(NS_MAP.unavailable_worker)
+      }
+
+      ocpList += "${cluster},${(CLUSTER_MAP.ntnet_flag)?"Pass":"Failed"},${NS_MAP.unavailable_worker},${NS_MAP.worker_status},${NS_MAP.namespace}\n"
+      CLUSTER_MAP.worker_line += "${NS_MAP.unavailable_worker_css}"
+      CLUSTER_MAP.duration_avg = CLUSTER_MAP.duration_total / CLUSTER_MAP.NS_COUNT
+      CLUSTER_MAP.NS_LIST[NS_MAP.namespace] = NS_MAP
+    }
+
+    // Available worker
+    available = tainted_nodes.minus(CLUSTER_MAP.unavailable_workers)
+    if (available) {
+        CLUSTER_MAP.available_line += "<tr><td><b style=\"color:green\">${status.A}Available: </b><a style=\"font-weight:500;\">${available.join(", ")}</a></td><td></td></tr>"
+        available.each {
+            ocpList += "${cluster},${(CLUSTER_MAP.ntnet_flag) ? "Pass" : "Failed"},${it},Available,NA\n"
+        }
+    }
+    total = CLUSTER_MAP.worker_line + CLUSTER_MAP.available_line
+    MAP_OF_CLUSTERS[cluster] = [map: CLUSTER_MAP]
+    quotaVal = QUOTA_MAP[cluster]?.get("quota")
+    (quotaVal) ?: " "
+    DESC_MAP.OCP += "<tr><td><b>${cluster}</b></td><td>${(CLUSTER_MAP.ntnet_flag) ? status.V : status.X}</td> \
+                         <td><b>${quotaVal}</b></td> \
+                         <td style=\"padding:0\"><table style=\"width:100%;line-height:1.25;text-align:left;border-spacing:0px;border-collapse:collapse;margin-bottom:8px\"><th style=\"width:330px;\"></th><th style=\"width:270px;\"></th>${total}</table></td></tr>"
+
+echo "end ocp"
+}
+
+// Currently not in use
+def jenkins(String instance) {
+echo "start jenkins"
+
+  resp_int = 0
+  def up = ''
+  try {
+    println "Checking if Jenkins ${instance} is UP."
+    up = sh(script:"set +x;curl -Is ${instance}", returnStdout: true)
+  }
+  catch(Exception e) {
+    jenkins_desc_list += "<tr style=\"background-color:#ffe1e1\"><td><b>${instance}</b></td><td>${status.X}</td><td></td></tr>"
+    jenkinsList += "${instance},Down\n"
+    addErrorBadge("[Failure] Jenkins " + instance + " is unavailable.")
+    println "jenkins function: ${e}"
+  }
+  if (up.contains("200 OK")) {
+    timeout(time: 30, unit: 'SECONDS') {
+    response = sh(script:"set +x;curl -s -o /dev/null -w '%{time_total}\n' -H 'Pragma: no-cache' ${instance}", returnStdout: true).toString().trim()
+    if (response) {
+      response = Double.parseDouble(response)
+      jenkins_desc_list += "<tr><td><b>${instance}</b></td><td>${status.V}</td><td><b>${(response*1000).toInteger()}</b>ms</td></tr>"
+      jenkinsList += "${instance},Up\n"
+    } else {
+      jenkins_desc_list += "<tr style=\"background-color:#ffe1e1\"><td><b>${instance}</b></td><td>${status.X}</td><td></td></tr>"
+      jenkinsList += "${instance},Down\n"
+      addErrorBadge("[Failure] Jenkins " + instance + " is unavailable.")
+    }
+    }
+  }
+echo "end jenkins"
+}
+
+def liveStatus() {
+echo "start liveStatus"
+
+  livestatus_img_list.unique().each { env ->
+    env = env.split(',')
+    sh "${print.XOUT}cp Monitor/img/${env[1]}.png Monitor/img/${env[0]}.png;cp Monitor/img/${env[2]}v2.png Monitor/img/${env[0]}-v2.png;"
+  }
+
+  parallel (
+    img_phase: { archiveArtifacts artifacts: "Monitor/img/**" },
+    logs_phase: { archiveArtifacts artifacts: "Monitor/logs/**" }
+  )
+echo "end liveStatus"
+}
+
+def ocpNodes() {
+echo "start ocpNodes"
+echo "DEBUG: ocpNodes source ~/.bashrc;psql -d ocp -U ro -h ilocpmonv -f Monitor/my_select.sql | grep -e '| w.*.' | sort"
+
+  // Initialization
+  alias_uniq_list = []
+
+  try {
+    //nodes_metrics = "100,200,300,400,500,600,777,888"
+    nodes_metrics = sh(script:"${print.XOUT}source ~/.bashrc;psql -d ocp -U ro -h ilocpmonv -f Monitor/my_select.sql | grep -e '| w.*.' | sort",
+                       returnStdout: true).replaceAll("[\\t]", "").replaceAll(".ocpd.corp.KUKU.com", "")
+    nodes_metrics = nodes_metrics.readLines()
+  } catch(Exception e) {
+    println e
+    addErrorBadge("[Failure] ilocpmonv is unavailable.")
+    nodes_metrics = null
+  }
+  if (nodes_metrics)
+     nodes_metrics.each { w ->
+       if (w) {
+         w = w.split('\\|')
+      WORKER_MAP = [bu: w[0],
+                    alias: w[1],
+                    node: w[2],
+                    cpu_percentage: w[3].toInteger(),
+                    ram_percentage: w[4].toInteger(),
+                    snaptime: w[5],
+                    cpu_threshold_color: '',
+                    ram_threshold_color: '']
+
+      if (WORKER_MAP.cpu_percentage > THRESHOLD_MAP.cpu_thre_orange || WORKER_MAP.ram_percentage > THRESHOLD_MAP.ram_thre_orange) {
+
+        if (WORKER_MAP.alias in alias_uniq_list) {
+          WORKER_MAP.alias = ''
+          WORKER_MAP.bu = ''
+        } else {
+          alias_uniq_list.add(WORKER_MAP.alias)
+        }
+
+        switch(WORKER_MAP.cpu_percentage) {
+
+          case 0..THRESHOLD_MAP.cpu_thre_orange:
+            WORKER_MAP.cpu_threshold_color = STATUS_COLOR.GREEN
+            break
+
+          case THRESHOLD_MAP.cpu_thre_orange..THRESHOLD_MAP.cpu_thre_red:
+            WORKER_MAP.cpu_threshold_color = STATUS_COLOR.ORANGE
+            break
+
+          default:
+            WORKER_MAP.cpu_threshold_color = STATUS_COLOR.RED
+            break
+        }
+
+        switch(WORKER_MAP.ram_percentage) {
+
+          case 0..THRESHOLD_MAP.ram_thre_orange:
+            WORKER_MAP.ram_threshold_color = STATUS_COLOR.GREEN
+            break
+
+          case THRESHOLD_MAP.ram_thre_orange..THRESHOLD_MAP.ram_thre_red:
+            WORKER_MAP.ram_threshold_color = STATUS_COLOR.ORANGE
+            break
+
+          default:
+            WORKER_MAP.ram_threshold_color = STATUS_COLOR.RED
+            break
+        }
+
+        if (WORKER_MAP.ram_threshold_color == STATUS_COLOR.RED || WORKER_MAP.cpu_threshold_color == STATUS_COLOR.RED) {
+            DESC_MAP.WORKERS += "<tr style=\"background-color:#ffe1e1\"><td style=\"background:#f5f5f5;\"><b>${WORKER_MAP.bu}</b></td><td style=\"background:#f5f5f5;\"><b>${WORKER_MAP.alias}</b></td><td>${WORKER_MAP.node}</td><td style=\"color:${ WORKER_MAP.cpu_threshold_color}\">${WORKER_MAP.cpu_percentage}%</td><td style=\"color:${ WORKER_MAP.ram_threshold_color}\">${WORKER_MAP.ram_percentage}%</td><td>${WORKER_MAP.snaptime}</td></tr>"
+        }
+        else {
+          DESC_MAP.WORKERS += "<tr><td><b>${WORKER_MAP.bu}</b></td>\
+                               <td><b>${WORKER_MAP.alias}</b></td>\
+                               <td>${WORKER_MAP.node}</td>\
+                               <td style=\"color:${WORKER_MAP.cpu_threshold_color}\">${WORKER_MAP.cpu_percentage}%</td>\
+                               <td style=\"color:${ WORKER_MAP.ram_threshold_color}\">${WORKER_MAP.ram_percentage}%</td>\
+                               <td>${WORKER_MAP.snaptime}</td></tr>"
+        }
+      }
+    }
+  }
+echo "end ocpNodes"
+}
+
+def ocpPVC() {
+echo "start ocpPVC"
+
+  pvc_namespaces_list = []
+  pvc_logs = []
+  pvc_list = ""
+  pvc_list = sh(script:"${print.XOUT}source ~/.bashrc;psql -v v1=${THRESHOLD_MAP.pvc_threshold} -d ocp -U ro -h ilocpmonv -f Monitor/my_select_pvc.sql | awk 'NR>2'| grep -v 'rows)' | grep -v 'row)'",
+      returnStdout: true).replaceAll("[\\t]", "").trim()
+
+  if (pvc_list) {
+    pvc_list.readLines().each { entry ->
+        if (entry) {
+          entry = entry.tokenize('|')
+          (pvc_per, pvc_cluster, pvc_namespace, pvc_name, pvc_datetime) = [entry[1].toInteger(), entry[2].replace("ISR_DO_","ilocpdo").trim(), entry[3].trim(), entry[4].trim(), entry[5]]
+          DESC_MAP.PVC += "<tr><td><b>${pvc_cluster}</b></td>\
+                           <td><b>${pvc_namespace}</b></td>\
+                           <td style=\"color:red\">${pvc_per}%</td>\
+                           <td>${pvc_name}</td>\
+                           <td>${pvc_datetime}</td></tr>"
+          pvc_namespaces_list.add(pvc_namespace)
+          pvc_logs.add("${pvc_namespace}|${pvc_name} has ${pvc_per}% PCT, snapshot time: ${pvc_datetime}")
+        }
+      }
+  } else {
+    DESC_MAP.PVC = '<h5 style="color:darkred">None reached the threshold.</h5>'
+  }
+echo "end ocpPVC"
+}
+
+def ocp_duration_list() {
+echo "start ocp_duration_list"
+
+  def ocp_duration_output = ''
+  DURATION_PATH = "${WORKSPACE}/monitor/Duration.html"
+  ocp_duration_output += "Duration List\n"
+
+  MAP_OF_CLUSTERS.each { key, map ->
+
+    map.each { cluster ->
+      def cluster_box = "${'='*13}\n${key}\n${'='*13}"
+      duration_cls = """${print.LN}${cluster_box}
+cluster_duration_total: ${cluster.value.duration_total.toString()[0..2]}s
+cluster_duration_avg: ${cluster.value.duration_avg.toString()[0..2]}s
+cluster_namespaces_count: ${cluster.value.NS_COUNT}\nnamespaces:\n"""
+      ocp_duration_output += duration_cls
+
+      (cluster.value.NS_LIST).each { ns ->
+        ocp_duration_output += "- [${ns.value.namespace}]: ${ns.value.ns_duration.toString()}\n"
+      }
+    }
+
+  }
+  writeFile file: DURATION_PATH, text: ocp_duration_output
+  archiveArtifacts artifacts: "monitor/Duration.html"
+
+  JENKINS_LIST_PATH = "${WORKSPACE}/Jenkins_list.html"
+  writeFile file: JENKINS_LIST_PATH, text: list_of_jenkins
+  archiveArtifacts artifacts: "Jenkins_list.html"
+echo "end ocp_duration_list"
+}
+
+def events() {
+echo "start events"
+
+  def previous_events = ''
+  def list_of_current_events = []
+  def list_of_previous_events = []
+  String previous_events_path = "${WORKSPACE}/previous_build/monitor/events.log"
+  String current_events_log_path = "${WORKSPACE}/monitor/events.log"
+
+  echo "DEBUG events: before copyArtifacts"
+  copyArtifacts filter: 'monitor/***.*',
+                fingerprintArtifacts: true,
+                projectName: 'AIDP-OCP-Health-Check',
+                selector: lastSuccessful(),
+                target: 'previous_build'
+  echo "DEBUG events: after copyArtifacts"
+  boolean exists = fileExists previous_events_path
+
+  if (exists) {
+    previous_events = readFile file: previous_events_path
+    String previous_STATUS_MAP_json = readFile file: "${WORKSPACE}/previous_build/monitor/events.json"
+    def jsonSlurper = new JsonSlurper()
+    def previous_STATUS_MAP = jsonSlurper.parseText(previous_STATUS_MAP_json) as HashMap
+
+    previous_STATUS_MAP.each { event ->
+      if (!event.value.status) {
+        list_of_previous_events.add("[${event.value.kind}] | ${event.value.name} | ${event.value.status} | ${event.value.message}")
+        println("[${event.value.kind}] | ${event.value.name} | ${event.value.status} | ${event.value.message}")
+      }
+    }
+
+    STATUS_MAP.each { event ->
+      if (!event.value.status) {
+        list_of_current_events.add("[${event.value.kind}] | ${event.value.name} | ${event.value.status} | ${event.value.message}")
+        println("[${event.value.kind}] | ${event.value.name} | ${event.value.status} | ${event.value.message}")
+      }
+    }
+
+    if (list_of_current_events != list_of_previous_events) {
+      println "${list_of_current_events} != ${list_of_previous_events}"
+
+      def new_events = (list_of_current_events - list_of_previous_events)
+      println "new_events: ${new_events}"
+
+      if (new_events) {
+
+        def new_events_list = new_events.collect { "${it} | timestamp: ${new Date().format("dd/MM/yyyy HH:mm:ss")} | Build ${currentBuild.number}" }
+        println "new_events_list: ${new_events_list}"
+
+        def new_events_string = new_events_list.join("\n")
+        println "new_events_string: ${new_events_string}"
+
+        writeFile file: current_events_log_path, text: "${previous_events}\n${new_events_string}"
+        archiveArtifacts artifacts: 'monitor/events.log'
+
+        println "New events: ${new_events}"
+      }
+    } else println "There are no new events."
+
+  } else {
+    println "events.log does not exist in previous_build, a new one was created instead."
+    writeFile file: current_events_log_path, text: ""
+    archiveArtifacts artifacts: 'monitor/events.log'
+  }
+echo "end events"
+}
+
+def append_to_file(content, path) {
+echo "start append_to_file"
+  sh(script:"#!/bin/sh -e\necho \"${content}\" >> \"${path}\"")
+echo "end append_to_file"
+}
+
+def send_mail(message) {
+echo "start send_mail"
+  mail_body =
+  """
+  ${message}
+  https://JENKINSSERVER:18081/view/z-DevOps%20Utilities/job/AIDP-OCP-Health-Check/
+  """
+
+  mail bcc: '',
+       body: mail_body,
+       cc: 'doronve@KUKU.com',
+       from: '',
+       replyTo: '',
+       subject: "DataOne_OCP_HealthCheck - Alert",
+       to: 'doronve@KUKU.com'
+echo "end send_mail"
+}
+
+def print_map(map) {
+echo "start print_map"
+  for (entry in map.entrySet()) {
+    println("Key: ${entry.key} - Value: ${entry.value}")
+  }
+echo "end print_map"
+}
+
+def map_to_json(map) {
+echo "start map_to_json"
+  return JsonOutput.toJson(map)
+echo "end map_to_json"
+}
+
+def json_to_map(json) {
+echo "json_to_map map_to_json"
+  return new JsonSlurper().parseText(json)
+}
