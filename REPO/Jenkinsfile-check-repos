@@ -1,0 +1,55 @@
+pipeline {
+  parameters {
+    booleanParam(name: 'CheckGitReposReadme', defaultValue: true, description: 'Check all BitBucket GIT repos')
+    booleanParam(name: 'CheckGitRepos',       defaultValue: true, description: 'Check all BitBucket GIT repos')
+    choice(      name: 'Xflag',               choices: [' ','-x'], description: 'put "-x" flag for bash commands')
+  }
+  triggers {
+    cron('10 * * * *')
+  }
+  agent {label 'Monitoring'}
+  options {
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(daysToKeepStr: '1'))
+  }
+  stages {
+    stage('CheckGitReposReadme') {
+    when { expression { params.CheckGitReposReadme == true } }
+      steps {
+        script {
+          env.PHASE='CheckGitReposReadme'
+          sh '''
+            set +x
+            bash $Xflag REPO/REPOS_check_all_Readme_file.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/XXX.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+    stage('CheckGitRepos') {
+    when { expression { params.CheckGitRepos == true } }
+      steps {
+        script {
+          env.PHASE='CheckGitRepos'
+          sh '''
+            set +x
+            echo bash $Xflag REPO/compare_repos_file_vs_GITSERVER.sh
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            echo check http://$(hostname -i)/XXX.html
+            echo ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          '''
+        }
+      }
+    }
+  }
+  post {
+    success {
+      echo 'I succeeded!'
+    }
+    failure {
+      echo 'I Failed!'
+    }
+  }
+}
